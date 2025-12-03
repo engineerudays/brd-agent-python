@@ -12,6 +12,7 @@ anthropic>=0.39.0
 # === API Framework ===
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
+python-multipart>=0.0.9
 
 # === CLI ===
 typer[all]>=0.13.0
