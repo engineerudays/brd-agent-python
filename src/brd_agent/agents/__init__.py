@@ -1,9 +1,16 @@
 """
 BRD Agent - Agents Module
-Individual agents for parsing, planning, and design tasks
+Individual agents for parsing, planning, and scheduling tasks
 """
 
 from .base import BaseAgent
+from .parser import ParserAgent
+from .planner import PlannerAgent
+from .scheduler import SchedulerAgent
 
-__all__ = ["BaseAgent"]
-
+__all__ = [
+    "BaseAgent",
+    "ParserAgent",
+    "PlannerAgent", 
+    "SchedulerAgent",
+]
