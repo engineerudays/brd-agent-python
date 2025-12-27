@@ -50,6 +50,42 @@ class Settings(BaseSettings):
         description="Logging level"
     )
     
+    # === RAG Configuration ===
+    chromadb_path: str = Field(
+        default="./.chromadb",
+        description="Path for ChromaDB vector store persistence"
+    )
+    
+    ollama_embedding_url: str = Field(
+        default="http://localhost:11434",
+        description="Ollama API URL for embedding generation"
+    )
+    
+    ollama_embedding_model: str = Field(
+        default="nomic-embed-text",
+        description="Ollama embedding model name"
+    )
+    
+    rag_enabled: bool = Field(
+        default=False,
+        description="Enable/disable RAG feature (feature flag)"
+    )
+    
+    default_repo_url: str = Field(
+        default="https://github.com/paperless-ngx/paperless-ngx",
+        description="Default GitHub repository URL for testing/development"
+    )
+    
+    rag_top_k: int = Field(
+        default=5,
+        description="Number of chunks to retrieve from vector store"
+    )
+    
+    rag_query_count: int = Field(
+        default=3,
+        description="Number of expanded queries for Query Expansion RAG"
+    )
+    
     # === Paths ===
     @property
     def project_root(self) -> Path:

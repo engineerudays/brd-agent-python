@@ -25,6 +25,9 @@ pydantic-settings>=2.6.0
 python-dotenv>=1.0.0
 httpx>=0.27.0
 
+# === RAG & Vector Store ===
+chromadb>=0.4.0
+
 # === PDF Parsing ===
 pypdf>=5.1.0
 

@@ -65,3 +65,6 @@ sample_inputs/outputs/poc_documents/*.json
 sample_inputs/outputs/tech_stack_recommendations/*.json
 !sample_inputs/outputs/README.md
 
+# Vector Store (ChromaDB)
+.chromadb/
+
