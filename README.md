@@ -37,6 +37,11 @@ BRD Agent automates the conversion of business requirements into actionable engi
 - **📊 Interactive Gantt Chart** - Visual timeline with phases and milestones
 - **🔄 Auto-Retry Logic** - Automatic retry with exponential backoff (3 attempts)
 - **💾 Download Artifacts** - Export results as JSON
+- **📚 RAG Infrastructure** - Vector store, embeddings, and document processing (in progress)
+  - **🗄️ ChromaDB Vector Store** - Persistent vector database with multi-repository support
+  - **🔢 Ollama Embeddings** - Local embedding generation via Ollama (nomic-embed-text)
+  - **✂️ Smart Chunking** - Header-based and recursive chunking strategies
+  - **🐙 GitHub API Client** - Repository content fetching with rate limit handling
 
 ### 🚧 Coming Soon
 
@@ -44,7 +49,7 @@ BRD Agent automates the conversion of business requirements into actionable engi
 - **💡 Tech Stack Agent** - Recommend and justify technology choices
 - **💻 PoC Generator** - Create working proof-of-concept code
 - **🤖 Gemma2 Support** - Local LLM via Ollama
-- **📚 RAG Integration** - Query existing system documentation
+- **🔍 RAG Query Integration** - Context-aware planning using retrieved documentation
 
 ---
 
@@ -57,6 +62,7 @@ BRD Agent automates the conversion of business requirements into actionable engi
 | **[USER_GUIDE.md](USER_GUIDE.md)** | End Users | Usage guide, troubleshooting |
 | **[API_REFERENCE.md](API_REFERENCE.md)** | Developers | API endpoints, schemas |
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | Architects | System design, data flow |
+| **[docs/RAG_EXPLORATION.md](docs/RAG_EXPLORATION.md)** | Architects/Developers | RAG integration design and patterns |
 
 ---
 
@@ -98,6 +104,9 @@ BRD Agent automates the conversion of business requirements into actionable engi
 - **AI**: Anthropic Claude (Haiku/Sonnet)
 - **Visualization**: Plotly (Gantt charts)
 - **Data Validation**: Pydantic
+- **Vector Database**: ChromaDB (persistent, embedded)
+- **Embeddings**: Ollama (nomic-embed-text, 768 dimensions)
+- **Document Processing**: Custom chunking strategies (header-based, recursive)
 
 ---
 
@@ -107,6 +116,12 @@ BRD Agent automates the conversion of business requirements into actionable engi
 
 - Python 3.11+
 - Anthropic API Key
+- Ollama (for RAG embeddings) - Optional but recommended
+  ```bash
+  brew install ollama  # macOS
+  brew services start ollama
+  ollama pull nomic-embed-text
+  ```
 
 ### Installation (5 minutes)
 
@@ -193,7 +208,11 @@ brd_agent_python/
 │   │   ├── plan.py          # Engineering plan models
 │   │   └── schedule.py      # Project schedule models
 │   └── services/            # External services
-│       └── llm.py           # LLM abstraction
+│       ├── llm.py           # LLM abstraction
+│       ├── vector_store.py  # ChromaDB vector store
+│       ├── embeddings.py   # Ollama embedding service
+│       ├── chunking.py      # Document chunking strategies
+│       └── github_client.py # GitHub API client
 ├── sample_inputs/           # Test data
 │   ├── brds/                # Sample BRD files
 │   └── outputs/             # Generated artifacts
@@ -237,13 +256,20 @@ curl -X POST http://localhost:8000/api/process-brd \
 - [x] FastAPI backend
 
 ### Phase 2: Local LLM 🚧 Planned
-- [ ] Ollama integration
-- [ ] Gemma2 support
+- [ ] Ollama integration for LLM (Gemma2 support)
 - [ ] Model switching in UI
+- [x] Ollama integration for embeddings ✅ (nomic-embed-text)
 
-### Phase 3: RAG Extension 💡 Future
-- [ ] Document ingestion
-- [ ] Vector database
+### Phase 3: RAG Extension 🚧 In Progress
+- [x] Configuration & setup ✅
+- [x] ChromaDB vector store ✅
+- [x] Ollama embedding service ✅
+- [x] Chunking strategies (header-based, recursive) ✅
+- [x] GitHub API client ✅
+- [ ] Document loaders (Markdown, OpenAPI)
+- [ ] Document ingestion pipeline
+- [ ] Query expansion RAG pattern
+- [ ] RetrieverAgent integration
 - [ ] Context-aware planning
 
 ---
@@ -268,6 +294,8 @@ MIT License - Feel free to use this project for learning and inspiration.
 - **LangGraph** - Workflow orchestration
 - **Anthropic** - Claude AI models
 - **Streamlit** - Beautiful UI framework
+- **ChromaDB** - Vector database for RAG
+- **Ollama** - Local embedding generation
 - **Original n8n Implementation** - [brd_agent_em](../brd_agent_em)
 
 ---
