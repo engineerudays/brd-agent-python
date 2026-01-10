@@ -77,13 +77,13 @@ class Settings(BaseSettings):
     )
     
     rag_top_k: int = Field(
-        default=5,
-        description="Number of chunks to retrieve from vector store"
+        default=15,
+        description="Number of chunks to retrieve from vector store (increased from 5 to support comprehensive planning that requires context for all BRD components)"
     )
     
     rag_query_count: int = Field(
-        default=3,
-        description="Number of expanded queries for Query Expansion RAG"
+        default=7,
+        description="Maximum number of expanded queries for Query Expansion RAG (increased from 3 to better cover BRDs with multiple objectives and requirements. Actual count is dynamic based on BRD complexity)"
     )
     
     # === Paths ===
