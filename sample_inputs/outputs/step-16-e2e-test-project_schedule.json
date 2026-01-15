@@ -1,0 +1,686 @@
+{
+  "success": true,
+  "project_schedule": {
+    "project_info": {
+      "project_name": "Enhanced Document Search with Advanced Filters",
+      "start_date": "2026-01-15",
+      "estimated_end_date": "2026-05-22",
+      "total_duration_weeks": 18,
+      "total_effort_person_weeks": 45
+    },
+    "phases": [
+      {
+        "phase_id": "P1",
+        "phase_name": "Advanced Search Filters",
+        "start_date": "2026-01-15",
+        "end_date": "2026-03-12",
+        "duration_weeks": 8,
+        "milestones": [
+          {
+            "milestone_id": "M1",
+            "name": "Advanced search filters integrated with global search",
+            "target_date": "2026-02-26",
+            "deliverables": [
+              "Advanced search filters integrated with the global search functionality",
+              "Ability to save and load custom search filter configurations"
+            ],
+            "dependencies": [
+              "Existing document metadata schema",
+              "Existing search API"
+            ]
+          }
+        ],
+        "tasks": [
+          {
+            "task_id": "T1",
+            "task_name": "Design advanced search filters UI",
+            "description": "Design the user interface and interaction for the advanced search filters, following existing UI patterns",
+            "assigned_to": "UI/UX Designer",
+            "start_date": "2026-01-15",
+            "end_date": "2026-01-28",
+            "effort_days": 10,
+            "status": "Not Started",
+            "dependencies": [],
+            "priority": "Critical"
+          },
+          {
+            "task_id": "T2",
+            "task_name": "Implement advanced search filters backend",
+            "description": "Integrate the advanced search filters with the existing search API and document index",
+            "assigned_to": "Software Engineer (Backend)",
+            "start_date": "2026-01-29",
+            "end_date": "2026-02-25",
+            "effort_days": 20,
+            "status": "Not Started",
+            "dependencies": [
+              "T1"
+            ],
+            "priority": "Critical"
+          },
+          {
+            "task_id": "T3",
+            "task_name": "Implement advanced search filters frontend",
+            "description": "Develop the user interface for the advanced search filters, integrating with the backend functionality",
+            "assigned_to": "Software Engineer (Frontend)",
+            "start_date": "2026-01-29",
+            "end_date": "2026-02-25",
+            "effort_days": 20,
+            "status": "Not Started",
+            "dependencies": [
+              "T1",
+              "T2"
+            ],
+            "priority": "Critical"
+          },
+          {
+            "task_id": "T4",
+            "task_name": "Implement save/load custom search configurations",
+            "description": "Provide the ability for users to save and load custom search filter configurations",
+            "assigned_to": "Software Engineer (Backend)",
+            "start_date": "2026-02-26",
+            "end_date": "2026-03-12",
+            "effort_days": 10,
+            "status": "Not Started",
+            "dependencies": [
+              "T2"
+            ],
+            "priority": "High"
+          },
+          {
+            "task_id": "T5",
+            "task_name": "Test and validate advanced search filters",
+            "description": "Perform comprehensive testing of the advanced search filters, including edge cases and performance",
+            "assigned_to": "Quality Assurance Engineer",
+            "start_date": "2026-02-26",
+            "end_date": "2026-03-12",
+            "effort_days": 10,
+            "status": "Not Started",
+            "dependencies": [
+              "T2",
+              "T3"
+            ],
+            "priority": "Critical"
+          }
+        ]
+      },
+      {
+        "phase_id": "P2",
+        "phase_name": "Relevance Ranking Improvements",
+        "start_date": "2026-03-16",
+        "end_date": "2026-04-09",
+        "duration_weeks": 4,
+        "milestones": [
+          {
+            "milestone_id": "M2",
+            "name": "Improved relevance ranking algorithm applied to search index",
+            "target_date": "2026-04-02",
+            "deliverables": [
+              "Improved relevance ranking algorithm applied to the document search index",
+              "Consistent relevance ranking across all search-related features"
+            ],
+            "dependencies": [
+              "Existing document search index and relevance ranking"
+            ]
+          }
+        ],
+        "tasks": [
+          {
+            "task_id": "T6",
+            "task_name": "Analyze current relevance ranking algorithm",
+            "description": "Evaluate the existing relevance ranking algorithm and identify areas for improvement",
+            "assigned_to": "Software Engineer (Backend)",
+            "start_date": "2026-03-16",
+            "end_date": "2026-03-25",
+            "effort_days": 8,
+            "status": "Not Started",
+            "dependencies": [],
+            "priority": "High"
+          },
+          {
+            "task_id": "T7",
+            "task_name": "Implement improved relevance ranking algorithm",
+            "description": "Develop and integrate the enhanced relevance ranking algorithm with the search index",
+            "assigned_to": "Software Engineer (Backend)",
+            "start_date": "2026-03-26",
+            "end_date": "2026-04-02",
+            "effort_days": 12,
+            "status": "Not Started",
+            "dependencies": [
+              "T6"
+            ],
+            "priority": "High"
+          },
+          {
+            "task_id": "T8",
+            "task_name": "Test and validate relevance ranking improvements",
+            "description": "Perform comprehensive testing of the enhanced relevance ranking algorithm, including user feedback collection",
+            "assigned_to": "Quality Assurance Engineer",
+            "start_date": "2026-04-03",
+            "end_date": "2026-04-09",
+            "effort_days": 5,
+            "status": "Not Started",
+            "dependencies": [
+              "T7"
+            ],
+            "priority": "High"
+          }
+        ]
+      },
+      {
+        "phase_id": "P3",
+        "phase_name": "Search Analytics",
+        "start_date": "2026-04-13",
+        "end_date": "2026-05-22",
+        "duration_weeks": 6,
+        "milestones": [
+          {
+            "milestone_id": "M3",
+            "name": "Search analytics data collection and reporting",
+            "target_date": "2026-05-15",
+            "deliverables": [
+              "Search analytics data collection and storage",
+              "Administrative interface for viewing and analyzing search analytics data",
+              "Search analytics reports and visualizations"
+            ],
+            "dependencies": [
+              "Existing document search functionality"
+            ]
+          }
+        ],
+        "tasks": [
+          {
+            "task_id": "T9",
+            "task_name": "Design search analytics data model and collection",
+            "description": "Define the data model and collection mechanisms for the search analytics",
+            "assigned_to": "Software Engineer (Backend)",
+            "start_date": "2026-04-13",
+            "end_date": "2026-04-22",
+            "effort_days": 8,
+            "status": "Not Started",
+            "dependencies": [],
+            "priority": "Medium"
+          },
+          {
+            "task_id": "T10",
+            "task_name": "Implement search analytics data collection and storage",
+            "description": "Develop the backend components to capture and store the search analytics data",
+            "assigned_to": "Software Engineer (Backend)",
+            "start_date": "2026-04-23",
+            "end_date": "2026-05-06",
+            "effort_days": 10,
+            "status": "Not Started",
+            "dependencies": [
+              "T9"
+            ],
+            "priority": "Medium"
+          },
+          {
+            "task_id": "T11",
+            "task_name": "Implement search analytics administrative interface",
+            "description": "Develop the user interface for administrators to view and analyze the search analytics data",
+            "assigned_to": "Software Engineer (Frontend)",
+            "start_date": "2026-04-23",
+            "end_date": "2026-05-06",
+            "effort_days": 10,
+            "status": "Not Started",
+            "dependencies": [
+              "T9",
+              "T10"
+            ],
+            "priority": "Medium"
+          },
+          {
+            "task_id": "T12",
+            "task_name": "Implement search analytics reports and visualizations",
+            "description": "Create the reports and visualizations to help users and administrators understand search trends and optimize the search experience",
+            "assigned_to": "Software Engineer (Frontend)",
+            "start_date": "2026-05-07",
+            "end_date": "2026-05-22",
+            "effort_days": 12,
+            "status": "Not Started",
+            "dependencies": [
+              "T10",
+              "T11"
+            ],
+            "priority": "Medium"
+          },
+          {
+            "task_id": "T13",
+            "task_name": "Test and validate search analytics functionality",
+            "description": "Perform comprehensive testing of the search analytics data collection, storage, and reporting",
+            "assigned_to": "Quality Assurance Engineer",
+            "start_date": "2026-05-07",
+            "end_date": "2026-05-22",
+            "effort_days": 10,
+            "status": "Not Started",
+            "dependencies": [
+              "T10",
+              "T11",
+              "T12"
+            ],
+            "priority": "Medium"
+          }
+        ]
+      }
+    ],
+    "resource_allocation": [
+      {
+        "role": "Software Engineer (Backend)",
+        "name": null,
+        "allocation": "",
+        "allocation_percentage": 60,
+        "phase": null,
+        "start_date": "2026-01-15",
+        "end_date": "2026-05-22",
+        "key_responsibilities": [
+          "Implement advanced search filters backend",
+          "Develop and integrate the enhanced relevance ranking algorithm",
+          "Design and implement the search analytics data model and collection"
+        ]
+      },
+      {
+        "role": "Software Engineer (Frontend)",
+        "name": null,
+        "allocation": "",
+        "allocation_percentage": 50,
+        "phase": null,
+        "start_date": "2026-01-15",
+        "end_date": "2026-05-22",
+        "key_responsibilities": [
+          "Implement advanced search filters frontend",
+          "Develop the search analytics administrative interface",
+          "Implement search analytics reports and visualizations"
+        ]
+      },
+      {
+        "role": "UI/UX Designer",
+        "name": null,
+        "allocation": "",
+        "allocation_percentage": 30,
+        "phase": null,
+        "start_date": "2026-01-15",
+        "end_date": "2026-02-26",
+        "key_responsibilities": [
+          "Design the advanced search filters UI"
+        ]
+      },
+      {
+        "role": "Quality Assurance Engineer",
+        "name": null,
+        "allocation": "",
+        "allocation_percentage": 40,
+        "phase": null,
+        "start_date": "2026-02-26",
+        "end_date": "2026-05-22",
+        "key_responsibilities": [
+          "Test and validate advanced search filters",
+          "Test and validate relevance ranking improvements",
+          "Test and validate search analytics functionality"
+        ]
+      },
+      {
+        "role": "Technical Project Manager",
+        "name": null,
+        "allocation": "",
+        "allocation_percentage": 20,
+        "phase": null,
+        "start_date": "2026-01-15",
+        "end_date": "2026-05-22",
+        "key_responsibilities": [
+          "Manage the overall project schedule and resource allocation",
+          "Coordinate cross-functional team activities",
+          "Monitor project risks and mitigation strategies"
+        ]
+      }
+    ],
+    "critical_path": [
+      {
+        "task_id": "T2",
+        "task_name": "Implement advanced search filters backend",
+        "duration_days": 20,
+        "slack_days": 0
+      },
+      {
+        "task_id": "T3",
+        "task_name": "Implement advanced search filters frontend",
+        "duration_days": 20,
+        "slack_days": 0
+      },
+      {
+        "task_id": "T7",
+        "task_name": "Implement improved relevance ranking algorithm",
+        "duration_days": 12,
+        "slack_days": 0
+      },
+      {
+        "task_id": "T10",
+        "task_name": "Implement search analytics data collection and storage",
+        "duration_days": 10,
+        "slack_days": 0
+      },
+      {
+        "task_id": "T11",
+        "task_name": "Implement search analytics administrative interface",
+        "duration_days": 10,
+        "slack_days": 0
+      },
+      {
+        "task_id": "T12",
+        "task_name": "Implement search analytics reports and visualizations",
+        "duration_days": 12,
+        "slack_days": 0
+      }
+    ],
+    "risk_timeline": [
+      {
+        "risk_id": "R1",
+        "description": "Potential performance degradation due to increased complexity of the search functionality",
+        "phase": "",
+        "mitigation": "",
+        "impact_on_schedule": "Potential delay of 2-4 weeks",
+        "contingency_buffer_days": 14
+      },
+      {
+        "risk_id": "R2",
+        "description": "Difficulty in accurately capturing and interpreting search analytics data",
+        "phase": "",
+        "mitigation": "",
+        "impact_on_schedule": "Potential delay of 1-2 weeks",
+        "contingency_buffer_days": 10
+      },
+      {
+        "risk_id": "R3",
+        "description": "Potential security and privacy concerns related to the collection and storage of search analytics data",
+        "phase": "",
+        "mitigation": "",
+        "impact_on_schedule": "Potential delay of 1-2 weeks",
+        "contingency_buffer_days": 10
+      }
+    ],
+    "key_deliverables": [
+      {
+        "deliverable_id": "",
+        "deliverable_name": "Advanced search filters integrated with global search",
+        "name": "",
+        "target_date": "",
+        "due_date": "2026-02-26",
+        "phase": "",
+        "responsible_team": "Backend and Frontend Engineering",
+        "dependencies": [
+          "Existing document metadata schema",
+          "Existing search API"
+        ]
+      },
+      {
+        "deliverable_id": "",
+        "deliverable_name": "Improved relevance ranking algorithm applied to search index",
+        "name": "",
+        "target_date": "",
+        "due_date": "2026-04-02",
+        "phase": "",
+        "responsible_team": "Backend Engineering",
+        "dependencies": [
+          "Existing document search index and relevance ranking"
+        ]
+      },
+      {
+        "deliverable_id": "",
+        "deliverable_name": "Search analytics data collection and reporting",
+        "name": "",
+        "target_date": "",
+        "due_date": "2026-05-15",
+        "phase": "",
+        "responsible_team": "Backend and Frontend Engineering",
+        "dependencies": [
+          "Existing document search functionality"
+        ]
+      }
+    ],
+    "assumptions": [
+      "The existing document metadata schema and search API are well-documented and can be leveraged for the advanced search filters",
+      "The existing document search index and relevance ranking algorithm can be extended to support the improvements",
+      "The team has the necessary expertise and tools to implement the search analytics functionality"
+    ],
+    "constraints": [
+      "The project must be completed within 18 weeks to meet the business requirements",
+      "The team size and allocation percentages cannot be significantly increased due to budget constraints"
+    ]
+  },
+  "summary": {
+    "total_phases": 3,
+    "total_tasks": 13,
+    "total_milestones": 3,
+    "generated_at": "2026-01-15T14:40:12.582693"
+  },
+  "visualization": {
+    "gantt_chart": {
+      "chart_type": "gantt",
+      "project_name": "Enhanced Document Search with Advanced Filters",
+      "start_date": "2026-01-15",
+      "end_date": "2026-05-22",
+      "tasks": [
+        {
+          "id": "phase-0",
+          "name": "Advanced Search Filters",
+          "start": "2026-01-15",
+          "end": "2026-03-12",
+          "type": "phase",
+          "progress": 0,
+          "dependencies": []
+        },
+        {
+          "id": "T1",
+          "name": "Design advanced search filters UI",
+          "start": "2026-01-15",
+          "end": "2026-01-28",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [],
+          "assigned_to": "UI/UX Designer",
+          "priority": "Critical",
+          "parent": "phase-0"
+        },
+        {
+          "id": "T2",
+          "name": "Implement advanced search filters backend",
+          "start": "2026-01-29",
+          "end": "2026-02-25",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T1"
+          ],
+          "assigned_to": "Software Engineer (Backend)",
+          "priority": "Critical",
+          "parent": "phase-0"
+        },
+        {
+          "id": "T3",
+          "name": "Implement advanced search filters frontend",
+          "start": "2026-01-29",
+          "end": "2026-02-25",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T1",
+            "T2"
+          ],
+          "assigned_to": "Software Engineer (Frontend)",
+          "priority": "Critical",
+          "parent": "phase-0"
+        },
+        {
+          "id": "T4",
+          "name": "Implement save/load custom search configurations",
+          "start": "2026-02-26",
+          "end": "2026-03-12",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T2"
+          ],
+          "assigned_to": "Software Engineer (Backend)",
+          "priority": "High",
+          "parent": "phase-0"
+        },
+        {
+          "id": "T5",
+          "name": "Test and validate advanced search filters",
+          "start": "2026-02-26",
+          "end": "2026-03-12",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T2",
+            "T3"
+          ],
+          "assigned_to": "Quality Assurance Engineer",
+          "priority": "Critical",
+          "parent": "phase-0"
+        },
+        {
+          "id": "phase-1",
+          "name": "Relevance Ranking Improvements",
+          "start": "2026-03-16",
+          "end": "2026-04-09",
+          "type": "phase",
+          "progress": 0,
+          "dependencies": []
+        },
+        {
+          "id": "T6",
+          "name": "Analyze current relevance ranking algorithm",
+          "start": "2026-03-16",
+          "end": "2026-03-25",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [],
+          "assigned_to": "Software Engineer (Backend)",
+          "priority": "High",
+          "parent": "phase-1"
+        },
+        {
+          "id": "T7",
+          "name": "Implement improved relevance ranking algorithm",
+          "start": "2026-03-26",
+          "end": "2026-04-02",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T6"
+          ],
+          "assigned_to": "Software Engineer (Backend)",
+          "priority": "High",
+          "parent": "phase-1"
+        },
+        {
+          "id": "T8",
+          "name": "Test and validate relevance ranking improvements",
+          "start": "2026-04-03",
+          "end": "2026-04-09",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T7"
+          ],
+          "assigned_to": "Quality Assurance Engineer",
+          "priority": "High",
+          "parent": "phase-1"
+        },
+        {
+          "id": "phase-2",
+          "name": "Search Analytics",
+          "start": "2026-04-13",
+          "end": "2026-05-22",
+          "type": "phase",
+          "progress": 0,
+          "dependencies": []
+        },
+        {
+          "id": "T9",
+          "name": "Design search analytics data model and collection",
+          "start": "2026-04-13",
+          "end": "2026-04-22",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [],
+          "assigned_to": "Software Engineer (Backend)",
+          "priority": "Medium",
+          "parent": "phase-2"
+        },
+        {
+          "id": "T10",
+          "name": "Implement search analytics data collection and storage",
+          "start": "2026-04-23",
+          "end": "2026-05-06",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T9"
+          ],
+          "assigned_to": "Software Engineer (Backend)",
+          "priority": "Medium",
+          "parent": "phase-2"
+        },
+        {
+          "id": "T11",
+          "name": "Implement search analytics administrative interface",
+          "start": "2026-04-23",
+          "end": "2026-05-06",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T9",
+            "T10"
+          ],
+          "assigned_to": "Software Engineer (Frontend)",
+          "priority": "Medium",
+          "parent": "phase-2"
+        },
+        {
+          "id": "T12",
+          "name": "Implement search analytics reports and visualizations",
+          "start": "2026-05-07",
+          "end": "2026-05-22",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T10",
+            "T11"
+          ],
+          "assigned_to": "Software Engineer (Frontend)",
+          "priority": "Medium",
+          "parent": "phase-2"
+        },
+        {
+          "id": "T13",
+          "name": "Test and validate search analytics functionality",
+          "start": "2026-05-07",
+          "end": "2026-05-22",
+          "type": "task",
+          "progress": 0,
+          "dependencies": [
+            "T10",
+            "T11",
+            "T12"
+          ],
+          "assigned_to": "Quality Assurance Engineer",
+          "priority": "Medium",
+          "parent": "phase-2"
+        }
+      ],
+      "generated_at": "2026-01-15T14:40:12.582914"
+    }
+  },
+  "metadata": {
+    "generated_by": "Planning Agent - Project Schedule Generator",
+    "timestamp": "2026-01-15T14:40:12.582953",
+    "source_plan": "Enhanced Document Search with Advanced Filters",
+    "version": "1.0",
+    "ai_model": "claude-3-haiku-20240307",
+    "tokens_used": {
+      "input": 0,
+      "output": 0
+    }
+  }
+}

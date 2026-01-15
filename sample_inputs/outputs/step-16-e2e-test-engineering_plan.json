@@ -1,0 +1,232 @@
+{
+  "engineering_plan": {
+    "project_overview": {
+      "name": "Enhanced Document Search with Advanced Filters",
+      "description": "This feature enhances the document search capabilities in paperless-ngx by adding advanced filtering options, improved relevance ranking, and search analytics. The goal is to help users find documents faster and improve overall user experience.",
+      "objectives": [
+        "Implement advanced search filters to allow users to refine document searches",
+        "Improve relevance ranking of search results to surface the most relevant documents",
+        "Provide search analytics to help users understand search behavior and optimize the search experience"
+      ]
+    },
+    "feature_breakdown": [
+      {
+        "feature_id": "SEARCH_FILTERS",
+        "feature_name": "Advanced Search Filters",
+        "description": "Implement a set of advanced search filters that allow users to refine their document searches. Filters should include options to search by document metadata (tags, correspondents, document types, custom fields, etc.), file properties (file type, size, date range, etc.), and full-text content.",
+        "priority": "Critical",
+        "complexity": "High",
+        "estimated_effort": "4-6 weeks",
+        "dependencies": [
+          "Existing document metadata schema (as documented in docs/usage.md)",
+          "Existing search API (as documented in docs/api.md)"
+        ],
+        "technical_requirements": [
+          "Integrate the advanced search filters with the existing global search functionality (as described in docs/usage.md#global-search)",
+          "Ensure the filters are intuitive and easy to use, following the existing UI patterns in the application",
+          "Optimize the search performance by leveraging the existing document search index (as documented in docs/administration.md#index)",
+          "Provide a way for users to save and load custom search filter configurations"
+        ],
+        "acceptance_criteria": [
+          "Users can easily find and apply advanced search filters to refine their document searches",
+          "Search results are updated in real-time as users adjust the filter settings",
+          "Saved search filter configurations are loaded correctly and applied to future searches",
+          "Search performance is maintained even with complex filter combinations"
+        ]
+      },
+      {
+        "feature_id": "RELEVANCE_RANKING",
+        "feature_name": "Improved Relevance Ranking",
+        "description": "Enhance the relevance ranking algorithm used to sort search results, ensuring the most relevant documents are displayed first. This may include incorporating additional signals beyond the existing Tf-Idf scoring (as described in docs/api.md#autocomplete).",
+        "priority": "High",
+        "complexity": "Medium",
+        "estimated_effort": "2-3 weeks",
+        "dependencies": [
+          "Existing document search index and relevance ranking (as documented in docs/api.md and docs/administration.md#index)"
+        ],
+        "technical_requirements": [
+          "Analyze the current relevance ranking algorithm and identify areas for improvement",
+          "Implement additional relevance signals, such as document metadata, user engagement, and query-document similarity",
+          "Ensure the relevance ranking is consistent across the global search, document list, and other search-related features",
+          "Provide a way for users to provide feedback on the relevance of search results to further improve the algorithm"
+        ],
+        "acceptance_criteria": [
+          "Search results are displayed in order of relevance, with the most relevant documents at the top",
+          "User feedback on search result relevance is collected and used to refine the ranking algorithm",
+          "Relevance ranking is consistent across all search-related features in the application"
+        ]
+      },
+      {
+        "feature_id": "SEARCH_ANALYTICS",
+        "feature_name": "Search Analytics",
+        "description": "Implement search analytics to help users and administrators understand search behavior and optimize the search experience. This may include tracking popular search queries, search result quality metrics, and user engagement with search results.",
+        "priority": "Medium",
+        "complexity": "Medium",
+        "estimated_effort": "2-3 weeks",
+        "dependencies": [
+          "Existing document search functionality (as documented in docs/usage.md and docs/api.md)"
+        ],
+        "technical_requirements": [
+          "Capture and store relevant search analytics data, such as search queries, result counts, user interactions, and search quality feedback",
+          "Provide an administrative interface to view and analyze the search analytics data",
+          "Generate reports and visualizations to help users and administrators understand search trends and optimize the search experience",
+          "Ensure the search analytics data collection and storage is secure and complies with any relevant data privacy regulations"
+        ],
+        "acceptance_criteria": [
+          "Search analytics data is collected and stored securely",
+          "Administrative users can access and analyze the search analytics data through a dedicated interface",
+          "Search analytics reports and visualizations provide meaningful insights to help optimize the search experience",
+          "Search analytics data collection and usage complies with all relevant data privacy regulations"
+        ]
+      }
+    ],
+    "technical_architecture": {
+      "system_components": [
+        "Document Search API (existing, as documented in docs/api.md)",
+        "Document Search Index (existing, as documented in docs/administration.md#index)",
+        "User Interface (existing, as documented in docs/usage.md)",
+        "Search Analytics Data Store (new)"
+      ],
+      "integration_points": [
+        "The advanced search filters will integrate with the existing global search functionality (as described in docs/usage.md#global-search)",
+        "The relevance ranking improvements will be applied to the existing document search index (as documented in docs/administration.md#index)",
+        "The search analytics data will be collected and stored separately from the main document data"
+      ],
+      "data_flow": "User searches for documents through the global search bar or the document list view. The search query is sent to the Document Search API, which retrieves the relevant documents from the Search Index. The search results are then displayed to the user in the UI. Search analytics data, such as the query, result count, and user interactions, are captured and stored in the Search Analytics Data Store.",
+      "security_considerations": [
+        "Ensure the search analytics data collection and storage complies with any relevant data privacy regulations",
+        "Implement appropriate access controls and permissions to the search analytics data, restricting access to authorized users only"
+      ]
+    },
+    "implementation_phases": [
+      {
+        "phase_number": 1,
+        "phase_name": "Advanced Search Filters",
+        "description": "Implement the advanced search filters, including the ability to filter by document metadata, file properties, and full-text content.",
+        "features_included": [
+          "SEARCH_FILTERS"
+        ],
+        "estimated_duration": "4-6 weeks",
+        "deliverables": [
+          "Advanced search filters integrated with the global search functionality",
+          "Ability to save and load custom search filter configurations"
+        ]
+      },
+      {
+        "phase_number": 2,
+        "phase_name": "Relevance Ranking Improvements",
+        "description": "Enhance the relevance ranking algorithm used to sort search results, ensuring the most relevant documents are displayed first.",
+        "features_included": [
+          "RELEVANCE_RANKING"
+        ],
+        "estimated_duration": "2-3 weeks",
+        "deliverables": [
+          "Improved relevance ranking algorithm applied to the document search index",
+          "Consistent relevance ranking across all search-related features"
+        ]
+      },
+      {
+        "phase_number": 3,
+        "phase_name": "Search Analytics",
+        "description": "Implement search analytics to help users and administrators understand search behavior and optimize the search experience.",
+        "features_included": [
+          "SEARCH_ANALYTICS"
+        ],
+        "estimated_duration": "2-3 weeks",
+        "deliverables": [
+          "Search analytics data collection and storage",
+          "Administrative interface for viewing and analyzing search analytics data",
+          "Search analytics reports and visualizations"
+        ]
+      }
+    ],
+    "risk_analysis": [
+      {
+        "risk_id": "R1",
+        "description": "Potential performance degradation due to increased complexity of the search functionality",
+        "impact": "High",
+        "probability": "Medium",
+        "mitigation_strategy": "Thoroughly test the performance of the search functionality, especially with complex filter combinations. Optimize the search index and query execution to maintain acceptable response times. Monitor the search performance in production and implement additional optimizations as needed."
+      },
+      {
+        "risk_id": "R2",
+        "description": "Difficulty in accurately capturing and interpreting search analytics data",
+        "impact": "Medium",
+        "probability": "Medium",
+        "mitigation_strategy": "Carefully design the search analytics data model and collection mechanisms to ensure the data is accurate and meaningful. Engage with users and administrators to understand their analytical needs and tailor the search analytics reports and visualizations accordingly. Continuously monitor and refine the search analytics functionality based on user feedback."
+      },
+      {
+        "risk_id": "R3",
+        "description": "Potential security and privacy concerns related to the collection and storage of search analytics data",
+        "impact": "High",
+        "probability": "Low",
+        "mitigation_strategy": "Implement robust security and access controls for the search analytics data. Ensure the data collection and storage complies with all relevant data privacy regulations. Regularly review and update the security and privacy measures as needed."
+      }
+    ],
+    "resource_requirements": {
+      "team_composition": [
+        "Software Engineer (Backend)",
+        "Software Engineer (Frontend)",
+        "UI/UX Designer",
+        "Quality Assurance Engineer",
+        "Technical Project Manager"
+      ],
+      "tools_and_technologies": [
+        "Python (existing, as used in paperless-ngx)",
+        "Django (existing, as used in paperless-ngx)",
+        "React.js (existing, as used in paperless-ngx UI)",
+        "Elasticsearch (existing, as used for the document search index in paperless-ngx)",
+        "PostgreSQL (existing, as used in paperless-ngx)"
+      ],
+      "infrastructure_needs": [
+        "Dedicated server resources for the search analytics data store",
+        "Monitoring and alerting system to track search performance and usage"
+      ]
+    },
+    "success_metrics": [
+      {
+        "metric_name": "User Satisfaction with Search Experience",
+        "target_value": "80% of users report a positive search experience",
+        "measurement_method": "User feedback surveys"
+      },
+      {
+        "metric_name": "Search Result Relevance",
+        "target_value": "Average search result relevance score of 4 out of 5",
+        "measurement_method": "User feedback on search result quality"
+      },
+      {
+        "metric_name": "Search Efficiency",
+        "target_value": "Average time to find a document reduced by 30%",
+        "measurement_method": "Tracking user search behavior and document retrieval times"
+      },
+      {
+        "metric_name": "Search Analytics Adoption",
+        "target_value": "80% of administrative users actively using the search analytics features",
+        "measurement_method": "Tracking user engagement with the search analytics interface"
+      }
+    ]
+  },
+  "metadata": {
+    "generated_by": "Planning Agent - Engineering Plan Generator",
+    "timestamp": "2026-01-15T14:39:45.240567",
+    "source_brd": "Enhanced Document Search with Advanced Filters",
+    "version": "1.0",
+    "ai_model": "claude-3-haiku-20240307",
+    "tokens_used": {
+      "input": 0,
+      "output": 0
+    },
+    "rag_context": {
+      "enabled": true,
+      "chunks_used": 11,
+      "source_files": [
+        "docs/usage.md",
+        "docs/advanced_usage.md",
+        "docs/api.md",
+        "docs/administration.md",
+        "docs/index.md"
+      ],
+      "note": "Plan generated using retrieved context from existing system documentation"
+    }
+  }
+}
