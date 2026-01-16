@@ -84,6 +84,14 @@ The Build Agent is my implementation specialist. It takes the plan and implement
 
 **Workspace**: `.cursor/build/` — Implementation summaries and deviation reports.
 
+### The Document Agent: My Technical Writer
+
+*"Documentation only, no design or implementation."*
+
+The Document Agent is my technical documentation specialist. When I need documentation created or updated—whether it's README files, architecture docs, or project documentation—this agent focuses solely on creating human-readable markdown documents. It doesn't design, plan, or implement—it documents what exists and what has been built.
+
+**Workspace**: Project-wide — Creates and updates documentation files as instructed (README.md, docs/, etc.).
+
 ---
 
 ## How We Work Together
@@ -117,8 +125,9 @@ Each agent has its own workspace, and they don't intrude into each other's space
 - Planning Agent creates plans in `.cursor/plans/`
 - Build Agent documents implementations in `.cursor/build/`
 - Explore Agent writes research in `docs/`
+- Document Agent updates project documentation (README.md, docs/, etc.) as instructed
 
-When Build Agent finds a deviation, it documents it in its workspace. Planning Agent reads it, updates the plan in its workspace, and creates a note explaining the update. Clear handoffs, no confusion.
+When Build Agent finds a deviation, it documents it in its workspace. Planning Agent reads it, updates the plan in its workspace, and creates a note explaining the update. Document Agent may be called upon to update documentation to reflect completed work. Clear handoffs, no confusion.
 
 ---
 
@@ -130,6 +139,7 @@ Each agent focuses on what it does best:
 - **Planning**: What to build, in what order, and why
 - **Building**: How to build it, implementation details
 - **Exploring**: What options exist and their tradeoffs
+- **Documenting**: Creating and maintaining human-readable documentation
 
 This separation makes the system more maintainable, understandable, and scalable.
 
