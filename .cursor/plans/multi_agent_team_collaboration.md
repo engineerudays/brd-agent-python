@@ -8,13 +8,13 @@
 
 ### The Problem I Was Solving
 
-Building complex software systems requires multiple skills: research, planning, implementation, and validation. Traditional approaches often blur these concerns, leading to:
-- Confusion about who does what
-- Missed details during planning
-- Implementation surprises
-- Difficulty tracking decisions
+Building complex software systems requires multiple skills: research, planning, implementation, and validation. When using a single general-purpose AI agent, these concerns often get blurred, leading to:
+- Confusion about which mode the agent is operating in (planning vs building vs exploring)
+- Missed details during planning (agent jumps to implementation too quickly)
+- Implementation surprises (agent makes decisions without proper exploration)
+- Difficulty tracking decisions (everything mixed together in one conversation)
 
-I needed a better way. I wanted to separate these concerns so each could be handled by a specialist, while I maintained control over decisions and direction.
+I needed a better way. I wanted to separate these concerns so each could be handled by a specialist agent, while I maintained control over decisions and direction.
 
 ### What I Get Out of It
 
@@ -42,15 +42,17 @@ My multi-agent approach addresses complexity by:
 - **Enabling iteration**: Plans evolve based on implementation learnings
 - **Ensuring quality**: Verification at each step
 
-This isn't just about building software—it's about building a better way to build software.
+This is about building a better way to build software—using specialized AI agents working together.
 
 ---
 
 ## The Challenge
 
-Building complex software systems is hard. I need to understand requirements, explore options, plan implementation, and execute step-by-step—all while managing dependencies, handling unexpected issues, and ensuring quality. Traditional approaches often blur these concerns, leading to confusion, missed details, and suboptimal outcomes.
+Building complex software systems is hard. I need to understand requirements, explore options, plan implementation, and execute step-by-step—all while managing dependencies, handling unexpected issues, and ensuring quality. 
 
-What if I could separate these concerns? What if I had specialized agents, each with a clear role, working together like a well-orchestrated team?
+When working with a single general-purpose AI agent, these different modes of work often get mixed together—the agent might jump from planning to implementation, or skip exploration entirely. This leads to confusion, missed details, and suboptimal outcomes.
+
+What if I could separate these concerns? What if I had specialized agents, each with a clear role and workspace, working together like a well-orchestrated team—all within the AI-powered vibe-coding paradigm?
 
 This is the story of how I built exactly that.
 
@@ -246,7 +248,7 @@ Success! The iterative refinement worked.
 
 ## The Bottom Line
 
-I've built a multi-agent collaboration system that works like a well-orchestrated team. Each agent has a clear role, works in its own space, and contributes specialized expertise. Together, we can tackle complex projects that would be difficult with a single, general-purpose approach.
+I've built a multi-agent collaboration system that works like a well-orchestrated team. Each agent has a clear role, works in its own space, and contributes specialized expertise. Together, we tackle complex projects more effectively than with a single general-purpose agent.
 
 The key is **separation of concerns** combined with **explicit communication** and **iterative refinement**. It's not about having the perfect plan upfront—it's about having a process that learns and improves.
 
@@ -263,8 +265,6 @@ This model isn't just for software development. It's applicable to any complex, 
 - Any project that benefits from specialized expertise
 
 The principles are universal: separate concerns, communicate explicitly, iterate and refine, and keep the user in control.
-
-I'm not just building software—I'm building a better way to build software.
 
 ---
 
