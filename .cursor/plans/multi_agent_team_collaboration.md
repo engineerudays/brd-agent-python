@@ -1,10 +1,10 @@
 # Building Together: My Multi-Agent Collaboration Story
 
-*How I built a team of specialized AI agents to tackle complex software projects*
+*When building complex software systems with AI assistance, I found that a single general-purpose agent struggles to maintain clear boundaries between different modes of work like — research, planning, implementation, and documentation. The agent would jump between concerns, mix planning with coding, skip exploration phases, and blur decision-making boundaries. This led to confusion, missed details, and suboptimal outcomes. I realized that within the AI-powered vibe-coding paradigm, I could achieve better results by creating a team of specialized agents, each with a distinct role, workspace, and expertise. By separating concerns—having a Planning Agent for strategy, a Build Agent for implementation, an Explore Agent for research, and a Document Agent for documentation — I could maintain clarity, improve quality, and scale to more complex projects. This document explains how I designed and implemented this multi-agent collaboration framework, the principles that guide it, and how it works in practice.*
 
 ---
 
-## Why I Built This System
+## How I Built This System
 
 ### The Problem I Was Solving
 
