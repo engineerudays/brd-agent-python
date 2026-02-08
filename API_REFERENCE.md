@@ -277,6 +277,240 @@ file: <PDF binary>
 
 ---
 
+## 🔍 Ingestion API Endpoints
+
+The ingestion API provides endpoints for managing documentation in the vector store for RAG functionality.
+
+### 7. Ingest Single Document
+
+**Endpoint**: `/api/ingest/document`
+
+**Method**: `POST`
+
+**Description**: Ingest a single markdown document from a GitHub repository into the vector store.
+
+**Request**:
+```json
+{
+  "repo_url": "https://github.com/owner/repo",
+  "file_path": "docs/architecture.md",
+  "content": "Optional: Direct content (if not fetching from GitHub)"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Successfully ingested docs/architecture.md",
+  "repo_url": "https://github.com/owner/repo",
+  "collection_name": "repo_abc123",
+  "files_processed": 1,
+  "chunks_created": 15,
+  "timestamp": "2025-12-12T10:43:39.878Z"
+}
+```
+
+**Error Response**:
+```json
+{
+  "success": false,
+  "message": "Failed to ingest docs/architecture.md",
+  "repo_url": "https://github.com/owner/repo",
+  "errors": ["File not found"],
+  "timestamp": "2025-12-12T10:43:39.878Z"
+}
+```
+
+---
+
+### 8. Ingest Repository Path
+
+**Endpoint**: `/api/ingest/repo-path`
+
+**Method**: `POST`
+
+**Description**: Ingest all markdown files from a specific path in a GitHub repository.
+
+**Request**:
+```json
+{
+  "repo_url": "https://github.com/owner/repo",
+  "path": "docs/"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Processed 5/5 files from docs/",
+  "repo_url": "https://github.com/owner/repo",
+  "collection_name": "repo_abc123",
+  "files_processed": 5,
+  "chunks_created": 87,
+  "errors": null,
+  "timestamp": "2025-12-12T10:43:39.878Z"
+}
+```
+
+**Partial Success Response**:
+```json
+{
+  "success": true,
+  "message": "Processed 4/5 files from docs/",
+  "repo_url": "https://github.com/owner/repo",
+  "collection_name": "repo_abc123",
+  "files_processed": 4,
+  "chunks_created": 72,
+  "errors": ["docs/old.md: File not found"],
+  "timestamp": "2025-12-12T10:43:39.878Z"
+}
+```
+
+---
+
+### 9. Get Ingestion Status
+
+**Endpoint**: `/api/ingest/status`
+
+**Method**: `GET`
+
+**Description**: Check ingestion status for a specific repository.
+
+**Query Parameters**:
+- `repo_url` (required): GitHub repository URL
+
+**Example**:
+```
+GET /api/ingest/status?repo_url=https://github.com/owner/repo
+```
+
+**Response**:
+```json
+{
+  "repo_url": "https://github.com/owner/repo",
+  "collection_name": "repo_abc123",
+  "document_count": 150,
+  "last_updated": "2025-12-12T10:43:39.878Z",
+  "exists": true
+}
+```
+
+**Not Found Response**:
+```json
+{
+  "repo_url": "https://github.com/owner/repo",
+  "collection_name": "repo_abc123",
+  "document_count": 0,
+  "last_updated": null,
+  "exists": false
+}
+```
+
+---
+
+### 10. List Ingested Repositories
+
+**Endpoint**: `/api/ingest/repos`
+
+**Method**: `GET`
+
+**Description**: List all repositories that have been ingested.
+
+**Response**:
+```json
+{
+  "repos": [
+    {
+      "repo_url": "https://github.com/owner/repo1",
+      "collection_name": "repo_abc123",
+      "document_count": 150
+    },
+    {
+      "repo_url": "https://github.com/owner/repo2",
+      "collection_name": "repo_def456",
+      "document_count": 87
+    }
+  ],
+  "total": 2
+}
+```
+
+---
+
+### 11. Delete Document
+
+**Endpoint**: `/api/ingest/document`
+
+**Method**: `DELETE`
+
+**Description**: Remove a specific document from a repository's collection.
+
+**Query Parameters**:
+- `repo_url` (required): GitHub repository URL
+- `file_path` (required): Path to document file to remove
+
+**Example**:
+```
+DELETE /api/ingest/document?repo_url=https://github.com/owner/repo&file_path=docs/old.md
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Deleted 12 chunk(s) from docs/old.md",
+  "repo_url": "https://github.com/owner/repo",
+  "file_path": "docs/old.md",
+  "chunks_deleted": 12
+}
+```
+
+**Error Response** (404):
+```json
+{
+  "detail": "Document not found: docs/old.md"
+}
+```
+
+---
+
+### 12. Delete Repository Collection
+
+**Endpoint**: `/api/ingest/repo`
+
+**Method**: `DELETE`
+
+**Description**: Remove an entire repository collection from the vector store.
+
+**Query Parameters**:
+- `repo_url` (required): GitHub repository URL
+
+**Example**:
+```
+DELETE /api/ingest/repo?repo_url=https://github.com/owner/repo
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Deleted repository collection: repo_abc123",
+  "repo_url": "https://github.com/owner/repo",
+  "collection_name": "repo_abc123"
+}
+```
+
+**Error Response** (404):
+```json
+{
+  "detail": "Repository collection not found: https://github.com/owner/repo"
+}
+```
+
+---
+
 ## 📦 Data Schemas
 
 ### BRD Input Schema

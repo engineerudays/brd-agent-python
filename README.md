@@ -37,11 +37,16 @@ BRD Agent automates the conversion of business requirements into actionable engi
 - **📊 Interactive Gantt Chart** - Visual timeline with phases and milestones
 - **🔄 Auto-Retry Logic** - Automatic retry with exponential backoff (3 attempts)
 - **💾 Download Artifacts** - Export results as JSON
-- **📚 RAG Infrastructure** - Vector store, embeddings, and document processing (in progress)
+- **📚 RAG Infrastructure** - Complete RAG system for context-aware planning ✅
   - **🗄️ ChromaDB Vector Store** - Persistent vector database with multi-repository support
   - **🔢 Ollama Embeddings** - Local embedding generation via Ollama (nomic-embed-text)
-  - **✂️ Smart Chunking** - Header-based and recursive chunking strategies
+  - **✂️ Smart Chunking** - Header-based, recursive, and code-aware chunking strategies
   - **🐙 GitHub API Client** - Repository content fetching with rate limit handling
+  - **🔍 RetrieverAgent** - Query expansion RAG pattern for enhanced retrieval
+  - **🎯 Context-Aware Planning** - PlannerAgent uses retrieved documentation to align with existing architecture
+  - **📥 CLI Ingestion Tool** - Bulk ingestion of GitHub repositories
+  - **🔌 Ingestion API** - REST endpoints for incremental document management
+  - **🔎 Repository Analyzer** - Automatic discovery of documentation and code structure
 
 ### 🚧 Coming Soon
 
@@ -49,7 +54,6 @@ BRD Agent automates the conversion of business requirements into actionable engi
 - **💡 Tech Stack Agent** - Recommend and justify technology choices
 - **💻 PoC Generator** - Create working proof-of-concept code
 - **🤖 Gemma2 Support** - Local LLM via Ollama
-- **🔍 RAG Query Integration** - Context-aware planning using retrieved documentation
 
 ---
 
@@ -76,24 +80,32 @@ BRD Agent automates the conversion of business requirements into actionable engi
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              FastAPI Orchestrator (Port 8000)               │
-│                    /api/process-brd                         │
+│         /api/process-brd  |  /api/ingest/*                  │
 └────────────────────────────┬────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    LangGraph Workflow                       │
 ├─────────────────────────────────────────────────────────────┤
-│  ParserAgent → PlannerAgent → SchedulerAgent               │
-│       ↓              ↓              ↓                       │
-│  Normalized      Engineering    Project                     │
-│     BRD            Plan         Schedule                    │
-└─────────────────────────────────────────────────────────────┘
+│  ParserAgent → RetrieverAgent → PlannerAgent → SchedulerAgent │
+│       ↓              ↓              ↓              ↓         │
+│  Normalized    Retrieved    Engineering    Project          │
+│     BRD        Context        Plan         Schedule         │
+└────────────────────────────┬────────────────────────────────┘
                              │
                              ▼
                     ┌─────────────┐
                     │  Anthropic  │
                     │   Claude    │
                     └─────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    RAG Infrastructure                       │
+├─────────────────────────────────────────────────────────────┤
+│  ChromaDB ← Embeddings (Ollama) ← Chunking ← GitHub API     │
+│  Vector Store    (nomic-embed)    Strategies   Client       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Technology Stack
@@ -116,12 +128,20 @@ BRD Agent automates the conversion of business requirements into actionable engi
 
 - Python 3.11+
 - Anthropic API Key
-- Ollama (for RAG embeddings) - Optional but recommended
+- **Ollama** (for RAG embeddings) - Required for RAG features
   ```bash
-  brew install ollama  # macOS
+  # macOS
+  brew install ollama
   brew services start ollama
+  
+  # Pull embedding model
   ollama pull nomic-embed-text
+  
+  # Verify Ollama is running
+  curl http://localhost:11434/api/tags
   ```
+  
+  **Note**: RAG features require Ollama to be running. Without it, the system will work but won't retrieve context from documentation.
 
 ### Installation (5 minutes)
 
@@ -140,6 +160,7 @@ pip install -r requirements.txt
 # 4. Configure environment
 cp env.template .env
 # Edit .env and add your ANTHROPIC_API_KEY
+# Optional: Configure RAG settings (see RAG Setup below)
 
 # 5. Start the backend
 uvicorn api.main:app --reload --port 8000
@@ -154,9 +175,82 @@ Open: **http://localhost:8501**
 
 ---
 
-## 📝 Usage Example
+## 🔍 RAG Setup (Context-Aware Planning)
 
-### Input BRD (JSON)
+The BRD Agent now supports **Retrieval-Augmented Generation (RAG)** to generate plans aligned with your existing system architecture.
+
+### Quick Setup
+
+1. **Ensure Ollama is running** (see Prerequisites above)
+
+2. **Ingest documentation** from your repository:
+   ```bash
+   # Using CLI (recommended)
+   python -m cli.ingest https://github.com/your-org/your-repo
+   
+   # Or ingest specific path
+   python -m cli.ingest https://github.com/your-org/your-repo --path docs/
+   ```
+
+3. **Enable RAG** in `.env`:
+   ```bash
+   RAG_ENABLED=true
+   DEFAULT_REPO_URL=https://github.com/your-org/your-repo
+   ```
+
+4. **Process BRD** - The system will automatically retrieve relevant context and generate aligned plans!
+
+### RAG Configuration Options
+
+Add to your `.env` file:
+
+```bash
+# RAG Feature Flag
+RAG_ENABLED=true
+
+# Default Repository (used if repo_url not specified in BRD)
+DEFAULT_REPO_URL=https://github.com/your-org/your-repo
+
+# Retrieval Settings
+RAG_TOP_K=15                    # Number of chunks to retrieve per query
+RAG_QUERY_COUNT=7               # Number of expanded queries (query expansion)
+
+# ChromaDB Settings
+CHROMADB_PATH=./.chromadb       # Path for vector store persistence
+
+# Ollama Settings
+OLLAMA_EMBEDDING_URL=http://localhost:11434
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+```
+
+### CLI Ingestion Commands
+
+```bash
+# Ingest entire repository (uses default from config if not specified)
+python -m cli.ingest
+
+# Ingest specific repository
+python -m cli.ingest https://github.com/paperless-ngx/paperless-ngx
+
+# Ingest specific path within repository
+python -m cli.ingest https://github.com/owner/repo --path docs/
+
+# Check ingestion status
+curl http://localhost:8000/api/ingest/status?repo_url=https://github.com/owner/repo
+
+# List all ingested repositories
+curl http://localhost:8000/api/ingest/repos
+```
+
+📖 **For detailed RAG usage, see [USER_GUIDE.md](USER_GUIDE.md#rag-setup-and-usage)**
+
+---
+
+## 📝 Usage Examples
+
+### Example 1: Basic BRD Processing (Without RAG)
+
+**Input BRD (JSON)**:
 
 ```json
 {
@@ -175,12 +269,53 @@ Open: **http://localhost:8501**
 }
 ```
 
-### Generated Output
-
-The system generates:
+**Generated Output**:
 1. **Engineering Plan** - Features, phases, risks, resources
 2. **Project Schedule** - Timeline with dates, tasks, milestones
 3. **Gantt Chart** - Visual representation
+
+---
+
+### Example 2: Context-Aware Planning with RAG
+
+**Step 1: Ingest your repository documentation**
+```bash
+python -m cli.ingest https://github.com/your-org/your-repo
+```
+
+**Step 2: Process BRD with RAG enabled**
+```json
+{
+  "project": {
+    "name": "Enhanced Document Search",
+    "description": "Add advanced filters to document search"
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Advanced Filters",
+      "priority": "High"
+    }
+  ],
+  "repo_url": "https://github.com/your-org/your-repo"
+}
+```
+
+**What happens**:
+1. **RetrieverAgent** extracts BRD summary and generates expanded queries
+2. **ChromaDB** retrieves relevant documentation chunks (architecture, patterns, conventions)
+3. **PlannerAgent** receives context and generates plan aligned with existing system:
+   - Uses existing tech stack (e.g., Django, React)
+   - Follows architectural patterns from docs
+   - References existing services and integrations
+   - Cites source documentation in plan
+
+**Generated Output** (Enhanced):
+- **Engineering Plan** - Aligned with existing architecture, cites sources
+- **Project Schedule** - Accounts for existing codebase structure
+- **Technical Architecture** - Integrates with existing components
+
+📖 **See [sample_inputs/outputs/step-16-e2e-test-engineering_plan.json](sample_inputs/outputs/step-16-e2e-test-engineering_plan.json) for a real example**
 
 ---
 
@@ -198,7 +333,8 @@ brd_agent_python/
 ├── src/brd_agent/           # Core library
 │   ├── agents/              # Agent implementations
 │   │   ├── parser.py        # BRD normalizer
-│   │   ├── planner.py       # Engineering plan generator
+│   │   ├── retriever.py      # RAG context retrieval (query expansion)
+│   │   ├── planner.py       # Engineering plan generator (RAG-enhanced)
 │   │   └── scheduler.py     # Project schedule generator
 │   ├── graph/               # LangGraph workflow
 │   │   ├── state.py         # Pipeline state definition
@@ -212,7 +348,14 @@ brd_agent_python/
 │       ├── vector_store.py  # ChromaDB vector store
 │       ├── embeddings.py   # Ollama embedding service
 │       ├── chunking.py      # Document chunking strategies
-│       └── github_client.py # GitHub API client
+│       ├── github_client.py # GitHub API client
+│       └── repository_analyzer.py # Repository analysis
+├── api/                     # FastAPI services
+│   ├── main.py             # Orchestrator API
+│   ├── pdf_parser.py       # PDF parsing service
+│   └── ingest.py           # Ingestion API endpoints
+├── cli/                     # CLI tools
+│   └── ingest.py           # Bulk ingestion CLI
 ├── sample_inputs/           # Test data
 │   ├── brds/                # Sample BRD files
 │   └── outputs/             # Generated artifacts
@@ -244,6 +387,23 @@ curl -X POST http://localhost:8000/api/process-brd \
 3. Click "🚀 Process BRD"
 4. View results in Results and Timeline tabs
 
+### RAG Test
+
+```bash
+# 1. Ingest test repository
+python -m cli.ingest https://github.com/paperless-ngx/paperless-ngx
+
+# 2. Process BRD with RAG (via API)
+curl -X POST http://localhost:8000/api/process-brd \
+  -H "Content-Type: application/json" \
+  -d @sample_inputs/brds/step-16-e2e-test-paperless_ngx_feature.json
+
+# 3. Check ingestion status
+curl "http://localhost:8000/api/ingest/status?repo_url=https://github.com/paperless-ngx/paperless-ngx"
+```
+
+📖 **See [scripts/test_step16_end_to_end.py](scripts/test_step16_end_to_end.py) for complete end-to-end test**
+
 ---
 
 ## 🎯 Roadmap
@@ -260,17 +420,27 @@ curl -X POST http://localhost:8000/api/process-brd \
 - [ ] Model switching in UI
 - [x] Ollama integration for embeddings ✅ (nomic-embed-text)
 
-### Phase 3: RAG Extension 🚧 In Progress
+### Phase 3: RAG Extension ✅ Complete
 - [x] Configuration & setup ✅
 - [x] ChromaDB vector store ✅
 - [x] Ollama embedding service ✅
-- [x] Chunking strategies (header-based, recursive) ✅
+- [x] Chunking strategies (header-based, recursive, code-aware) ✅
 - [x] GitHub API client ✅
-- [ ] Document loaders (Markdown, OpenAPI)
-- [ ] Document ingestion pipeline
-- [ ] Query expansion RAG pattern
-- [ ] RetrieverAgent integration
-- [ ] Context-aware planning
+- [x] Document loaders (Markdown) ✅
+- [x] CLI bulk ingestion tool ✅
+- [x] Ingestion API endpoints ✅
+- [x] Query expansion RAG pattern ✅
+- [x] RetrieverAgent integration ✅
+- [x] Context-aware planning ✅
+- [x] Repository analyzer ✅
+- [x] End-to-end testing ✅
+
+### Phase 4: Advanced Features 🚧 Planned
+- [ ] Document loaders (OpenAPI, PDF)
+- [ ] Architecture Design Agent
+- [ ] Tech Stack Agent
+- [ ] PoC Generator
+- [ ] Gemma2 Support (Local LLM)
 
 ---
 

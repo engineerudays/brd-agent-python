@@ -14,11 +14,12 @@ Last Updated: December 2025
 3. [Features Overview](#features-overview)
 4. [Input Methods](#input-methods)
 5. [Processing BRDs](#processing-brds)
-6. [Viewing Results](#viewing-results)
-7. [Timeline Visualization](#timeline-visualization)
-8. [Download & Export](#download--export)
-9. [Troubleshooting](#troubleshooting)
-10. [Best Practices](#best-practices)
+6. [RAG Setup and Usage](#rag-setup-and-usage)
+7. [Viewing Results](#viewing-results)
+8. [Timeline Visualization](#timeline-visualization)
+9. [Download & Export](#download--export)
+10. [Troubleshooting](#troubleshooting)
+11. [Best Practices](#best-practices)
 
 ---
 
@@ -228,6 +229,281 @@ If processing fails, the system **automatically retries**:
 
 ---
 
+## 🔍 RAG Setup and Usage
+
+The BRD Agent supports **Retrieval-Augmented Generation (RAG)** to generate engineering plans that align with your existing system architecture, tech stack, and conventions.
+
+### What is RAG?
+
+RAG allows the PlannerAgent to:
+- ✅ Retrieve relevant documentation from your codebase
+- ✅ Generate plans aligned with existing architecture patterns
+- ✅ Use your actual tech stack (Django, React, etc.)
+- ✅ Reference existing services and integrations
+- ✅ Follow your coding conventions and patterns
+
+### Prerequisites
+
+1. **Ollama Running**:
+   ```bash
+   # Check if Ollama is running
+   curl http://localhost:11434/api/tags
+   
+   # If not running, start it
+   brew services start ollama  # macOS
+   ```
+
+2. **Embedding Model Pulled**:
+   ```bash
+   ollama pull nomic-embed-text
+   ```
+
+### Step 1: Ingest Documentation
+
+You can ingest documentation using either the **CLI** or **API**.
+
+#### Option A: CLI (Recommended)
+
+```bash
+# Ingest entire repository
+python -m cli.ingest https://github.com/your-org/your-repo
+
+# Ingest specific path
+python -m cli.ingest https://github.com/your-org/your-repo --path docs/
+
+# Use default repository from config
+python -m cli.ingest
+```
+
+**What happens**:
+- Fetches repository structure via GitHub API
+- Finds all markdown files (`.md`, `.rst`, `.markdown`)
+- Chunks documents intelligently (header-based for Markdown, code-aware for Python)
+- Generates embeddings via Ollama
+- Stores in ChromaDB vector store
+
+**Output**:
+```
+🚀 Starting ingestion for: https://github.com/your-org/your-repo
+📂 Fetching repository structure...
+✓ Found 45 items in repository
+📄 Found 12 markdown files
+Processing files...
+[████████████████████] 100% (12/12 files)
+✓ Successfully ingested 12 files
+  Collection: repo_abc123
+  Total chunks: 187
+  Time: 45.2s
+```
+
+#### Option B: API
+
+```bash
+# Ingest single document
+curl -X POST http://localhost:8000/api/ingest/document \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repo_url": "https://github.com/your-org/your-repo",
+    "file_path": "docs/architecture.md"
+  }'
+
+# Ingest repository path
+curl -X POST http://localhost:8000/api/ingest/repo-path \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repo_url": "https://github.com/your-org/your-repo",
+    "path": "docs/"
+  }'
+```
+
+### Step 2: Enable RAG
+
+Add to your `.env` file:
+
+```bash
+# Enable RAG feature
+RAG_ENABLED=true
+
+# Set default repository (optional)
+DEFAULT_REPO_URL=https://github.com/your-org/your-repo
+
+# Tune retrieval (optional)
+RAG_TOP_K=15              # Chunks per query
+RAG_QUERY_COUNT=7         # Expanded queries
+```
+
+**Restart backend** after changing `.env`:
+```bash
+uvicorn api.main:app --reload --port 8000
+```
+
+### Step 3: Process BRD with RAG
+
+When RAG is enabled, include `repo_url` in your BRD (or use default):
+
+**JSON BRD**:
+```json
+{
+  "project": {
+    "name": "Enhanced Document Search",
+    "description": "Add advanced filters to document search"
+  },
+  "features": [
+    {
+      "id": "F001",
+      "name": "Advanced Filters",
+      "priority": "High"
+    }
+  ],
+  "repo_url": "https://github.com/your-org/your-repo"
+}
+```
+
+**What happens during processing**:
+
+1. **ParserAgent**: Normalizes BRD
+2. **RetrieverAgent**:
+   - Extracts BRD summary (objectives, requirements)
+   - Generates expanded queries dynamically (up to 7 by default, based on BRD complexity)
+   - Retrieves top 15 chunks per query from ChromaDB
+   - Merges and deduplicates results
+   - Ranks by relevance
+3. **PlannerAgent**:
+   - Receives retrieved context (architecture docs, patterns, conventions)
+   - Generates plan aligned with existing system
+   - Cites source documentation
+4. **SchedulerAgent**: Creates project schedule
+
+### Step 4: Verify RAG Context
+
+Check if context was retrieved:
+
+**Via API Response**:
+```json
+{
+  "engineering_plan": {
+    "metadata": {
+      "rag_context": {
+        "enabled": true,
+        "chunks_used": 45,
+        "source_files": ["docs/architecture.md", "docs/api.md", ...],
+        "note": "Plan generated using retrieved context from existing system documentation"
+      }
+    }
+  }
+}
+```
+
+**In Generated Plan**:
+Look for:
+- References to existing tech stack
+- Citations to source documentation
+- Alignment with architectural patterns
+- Integration with existing services
+
+### Managing Ingested Documentation
+
+#### Check Ingestion Status
+
+```bash
+# Via API
+curl "http://localhost:8000/api/ingest/status?repo_url=https://github.com/your-org/your-repo"
+
+# Response
+{
+  "repo_url": "https://github.com/your-org/your-repo",
+  "collection_name": "repo_abc123",
+  "document_count": 150,
+  "exists": true
+}
+```
+
+#### List All Repositories
+
+```bash
+curl http://localhost:8000/api/ingest/repos
+```
+
+#### Update Documentation
+
+Simply re-ingest the repository or specific path. The system will update existing chunks.
+
+#### Delete Documentation
+
+```bash
+# Delete single document
+curl -X DELETE "http://localhost:8000/api/ingest/document?repo_url=https://github.com/your-org/your-repo&file_path=docs/old.md"
+
+# Delete entire repository collection
+curl -X DELETE "http://localhost:8000/api/ingest/repo?repo_url=https://github.com/your-org/your-repo"
+```
+
+### RAG Configuration Options
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `RAG_ENABLED` | `false` | Enable/disable RAG feature |
+| `DEFAULT_REPO_URL` | `https://github.com/paperless-ngx/paperless-ngx` | Default repository for testing |
+| `RAG_TOP_K` | `15` | Number of chunks to retrieve per query |
+| `RAG_QUERY_COUNT` | `7` | Number of expanded queries (query expansion) |
+| `CHROMADB_PATH` | `./.chromadb` | Path for vector store persistence |
+| `OLLAMA_EMBEDDING_URL` | `http://localhost:11434` | Ollama API URL |
+| `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model name |
+
+### Troubleshooting RAG
+
+#### Issue: "No context retrieved"
+
+**Causes**:
+- Collection doesn't exist or is empty
+- `RAG_ENABLED=false` in `.env`
+- Ollama not running
+
+**Solutions**:
+1. Check ingestion status: `curl "http://localhost:8000/api/ingest/status?repo_url=..."`
+2. Verify `.env` has `RAG_ENABLED=true`
+3. Ensure Ollama is running: `curl http://localhost:11434/api/tags`
+4. Re-ingest documentation if needed
+
+#### Issue: "Ollama connection error"
+
+**Solutions**:
+1. Start Ollama: `brew services start ollama`
+2. Verify model: `ollama list` (should show `nomic-embed-text`)
+3. Test embedding: `curl http://localhost:11434/api/embeddings -d '{"model": "nomic-embed-text", "prompt": "test"}'`
+
+#### Issue: Plans not aligned with architecture
+
+**Solutions**:
+1. Ensure documentation is comprehensive (architecture, API docs, conventions)
+2. Increase `RAG_TOP_K` to retrieve more context
+3. Increase `RAG_QUERY_COUNT` for better query coverage
+4. Verify ingested docs contain relevant information
+
+### Best Practices for RAG
+
+1. **Ingest Comprehensive Documentation**:
+   - Architecture documents
+   - API documentation
+   - Coding conventions
+   - Integration guides
+   - README files
+
+2. **Keep Documentation Updated**:
+   - Re-ingest when architecture changes
+   - Update docs before processing new BRDs
+
+3. **Use Specific Paths**:
+   - Ingest only relevant paths (e.g., `docs/`, `architecture/`)
+   - Avoid ingesting entire repositories with lots of code
+
+4. **Monitor Retrieval Quality**:
+   - Check `rag_context.chunks_used` in plan metadata
+   - Review source citations in generated plans
+   - Adjust `RAG_TOP_K` and `RAG_QUERY_COUNT` as needed
+
+---
+
 ## 📊 Viewing Results
 
 After successful processing, navigate to the **"Results"** tab.
@@ -238,11 +514,17 @@ At the top, you'll see:
 
 ```
 Status: ✅ Success
-Stages Completed: 3
+Stages Completed: 4 (with RAG enabled) or 3 (without RAG)
 Completed At: 2025-12-12 10:43
 ```
 
-**Stages**:
+**Stages** (with RAG enabled):
+- ✓ BRD Parsing
+- ✓ Context Retrieval (RAG)
+- ✓ Engineering Plan
+- ✓ Project Schedule
+
+**Stages** (without RAG):
 - ✓ BRD Parsing
 - ✓ Engineering Plan
 - ✓ Project Schedule
@@ -601,6 +883,9 @@ Ensure your JSON has one of:
 - ✅ Toast Notifications
 - ✅ Interactive Charts
 - ✅ One-click Downloads
+- ✅ RAG Context-Aware Planning
+- ✅ CLI Bulk Ingestion
+- ✅ Ingestion API
 
 ---
 
