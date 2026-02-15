@@ -22,6 +22,10 @@ class AgentState(TypedDict, total=False):
     # === After Parser ===
     parsed_brd: dict  # Normalized BRD data
     
+    # === After Retriever (RAG) ===
+    retrieved_context: Optional[list]  # Retrieved document chunks from RAG
+    repo_url: Optional[str]  # Repository URL for RAG (optional, uses default if not provided)
+    
     # === After Planner ===
     engineering_plan: dict  # Generated engineering plan
     

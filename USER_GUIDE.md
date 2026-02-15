@@ -364,10 +364,14 @@ When RAG is enabled, include `repo_url` in your BRD (or use default):
 1. **ParserAgent**: Normalizes BRD
 2. **RetrieverAgent**:
    - Extracts BRD summary (objectives, requirements)
-   - Generates expanded queries dynamically (up to 7 by default, based on BRD complexity)
-   - Retrieves top 15 chunks per query from ChromaDB
-   - Merges and deduplicates results
-   - Ranks by relevance
+   - Generates expanded queries dynamically using formula: `min(RAG_QUERY_COUNT, num_objectives + num_requirements + 3)`
+     - Example: BRD with 2 objectives + 3 requirements → `min(7, 2+3+3) = 7` queries
+     - Example: BRD with 1 objective + 1 requirement → `min(7, 1+1+3) = 5` queries
+   - Retrieves chunks from ChromaDB (top-K per query, then merged)
+   - Merges and deduplicates results across all queries
+   - Ranks by relevance and returns top `RAG_TOP_K` chunks (default: 15)
+   - **Note**: `RAG_TOP_K` applies to the **final merged results**, not per-query results
+   - **Graceful Degradation**: If RAG is enabled but no collection exists (or collection is empty), RetrieverAgent skips retrieval and the workflow continues without context. This is **non-fatal** - the system will still complete successfully, generating plans without RAG enhancement.
 3. **PlannerAgent**:
    - Receives retrieved context (architecture docs, patterns, conventions)
    - Generates plan aligned with existing system
@@ -444,7 +448,7 @@ curl -X DELETE "http://localhost:8000/api/ingest/repo?repo_url=https://github.co
 |---------|---------|-------------|
 | `RAG_ENABLED` | `false` | Enable/disable RAG feature |
 | `DEFAULT_REPO_URL` | `https://github.com/paperless-ngx/paperless-ngx` | Default repository for testing |
-| `RAG_TOP_K` | `15` | Number of chunks to retrieve per query |
+| `RAG_TOP_K` | `15` | Number of final merged chunks (after deduplication across all queries) |
 | `RAG_QUERY_COUNT` | `7` | Number of expanded queries (query expansion) |
 | `CHROMADB_PATH` | `./.chromadb` | Path for vector store persistence |
 | `OLLAMA_EMBEDDING_URL` | `http://localhost:11434` | Ollama API URL |
@@ -464,6 +468,9 @@ curl -X DELETE "http://localhost:8000/api/ingest/repo?repo_url=https://github.co
 2. Verify `.env` has `RAG_ENABLED=true`
 3. Ensure Ollama is running: `curl http://localhost:11434/api/tags`
 4. Re-ingest documentation if needed
+
+**Note - Graceful Degradation**:
+If RAG is enabled but no context is retrieved (collection doesn't exist, is empty, or Ollama is unavailable), the RetrieverAgent gracefully degrades and the workflow continues without retrieved context. The PlannerAgent will generate plans without RAG enhancement, and the system will still complete successfully. Check the `stages_completed` field in the response - if it shows 3 stages instead of 4, RAG retrieval was skipped.
 
 #### Issue: "Ollama connection error"
 

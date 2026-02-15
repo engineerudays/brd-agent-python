@@ -10,8 +10,9 @@ from typing import Optional
 from langgraph.graph import StateGraph, END
 
 from .state import AgentState
-from ..agents import ParserAgent, PlannerAgent, SchedulerAgent
+from ..agents import ParserAgent, PlannerAgent, SchedulerAgent, RetrieverAgent
 from ..services.llm import LLMService, get_llm_service
+from ..config import get_settings
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class BRDWorkflow:
     LangGraph workflow that orchestrates the BRD agent pipeline.
     
     Pipeline:
-        Input → Parser → Planner → Scheduler → Output
+        Input → Parser → Retriever (RAG) → Planner → Scheduler → Output
     """
     
     def __init__(self, llm_service: Optional[LLMService] = None):
@@ -36,8 +37,10 @@ class BRDWorkflow:
         
         # Initialize agents with shared LLM service
         self.parser = ParserAgent(llm_service=self.llm)
+        self.retriever = RetrieverAgent(llm_service=self.llm)
         self.planner = PlannerAgent(llm_service=self.llm)
         self.scheduler = SchedulerAgent(llm_service=self.llm)
+        self.settings = get_settings()
         
         # Build the graph
         self.graph = self._build_graph()
@@ -52,13 +55,15 @@ class BRDWorkflow:
         
         # Add nodes (each node is a function that takes state and returns updated state)
         workflow.add_node("parser", self._parser_node)
+        workflow.add_node("retriever", self._retriever_node)
         workflow.add_node("planner", self._planner_node)
         workflow.add_node("scheduler", self._scheduler_node)
         workflow.add_node("finalize", self._finalize_node)
         
         # Define the edges (flow)
         workflow.set_entry_point("parser")
-        workflow.add_edge("parser", "planner")
+        workflow.add_edge("parser", "retriever")
+        workflow.add_edge("retriever", "planner")
         workflow.add_edge("planner", "scheduler")
         workflow.add_edge("scheduler", "finalize")
         workflow.add_edge("finalize", END)
@@ -97,6 +102,90 @@ class BRDWorkflow:
                 "message": f"BRD parsing failed: {str(e)}"
             }
     
+    def _retriever_node(self, state: AgentState) -> AgentState:
+        """Retriever node - retrieves relevant context from ingested repositories (RAG)."""
+        logger.info("Workflow: Running Retriever node")
+        
+        # Skip if previous stage failed
+        if state.get("status") == "error":
+            return state
+        
+        # Check if RAG is enabled
+        if not self.settings.rag_enabled:
+            logger.info("RAG is disabled in config, skipping retrieval")
+            return {
+                **state,
+                "retrieved_context": None,
+                "stages_completed": state.get("stages_completed", [])
+            }
+        
+        try:
+            parsed_brd = state.get("parsed_brd", {})
+            
+            # Get repo_url from state or use default
+            repo_url = state.get("repo_url") or self.settings.default_repo_url
+            
+            # Convert dict to ParsedBRD model for retriever
+            from ..models.brd import ParsedBRD
+            
+            try:
+                brd_model = self._dict_to_parsed_brd(parsed_brd)
+            except Exception:
+                # Create minimal ParsedBRD if conversion fails
+                brd_model = ParsedBRD(
+                    document_info={"title": parsed_brd.get("project", {}).get("name", "Unknown Project")},
+                    executive_summary=parsed_brd.get("project", {}).get("description", ""),
+                )
+            
+            # Check if collection exists before querying
+            from ..services.vector_store import VectorStore
+            vector_store = VectorStore()
+            
+            try:
+                collection = vector_store.get_collection(repo_url)
+                if collection is None or collection.count() == 0:
+                    logger.warning(f"Collection for {repo_url} does not exist or is empty. Skipping RAG.")
+                    return {
+                        **state,
+                        "retrieved_context": None,
+                        "repo_url": repo_url,
+                        "stages_completed": state.get("stages_completed", [])
+                    }
+            except Exception as e:
+                logger.warning(f"Could not check collection existence: {e}. Skipping RAG.")
+                return {
+                    **state,
+                    "retrieved_context": None,
+                    "repo_url": repo_url,
+                    "stages_completed": state.get("stages_completed", [])
+                }
+            
+            # Run the retriever agent
+            retrieved_context = self.retriever.run(brd_model, repo_url=repo_url)
+            
+            # Update state
+            stages = state.get("stages_completed", [])
+            stages.append("context_retrieval")
+            
+            logger.info(f"Retrieved {len(retrieved_context)} chunks from {repo_url}")
+            
+            return {
+                **state,
+                "retrieved_context": retrieved_context,
+                "repo_url": repo_url,
+                "stages_completed": stages
+            }
+            
+        except Exception as e:
+            # Don't fail the workflow if retrieval fails - graceful degradation
+            logger.warning(f"Retriever node failed (continuing without RAG): {e}")
+            return {
+                **state,
+                "retrieved_context": None,
+                "repo_url": state.get("repo_url"),
+                "stages_completed": state.get("stages_completed", [])
+            }
+    
     def _planner_node(self, state: AgentState) -> AgentState:
         """Planner node - generates engineering plan."""
         logger.info("Workflow: Running Planner node")
@@ -124,8 +213,14 @@ class BRDWorkflow:
                     executive_summary=parsed_brd.get("project", {}).get("description", ""),
                 )
             
-            # Run the planner agent
-            engineering_plan = self.planner.run(brd_model)
+            # Get retrieved context from state (from RetrieverAgent)
+            retrieved_context = state.get("retrieved_context")
+            
+            # Run the planner agent with retrieved context
+            engineering_plan = self.planner.run(
+                brd_model, 
+                retrieved_context=retrieved_context
+            )
             
             # Update state
             stages = state.get("stages_completed", [])

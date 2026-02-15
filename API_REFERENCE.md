@@ -41,15 +41,20 @@ The BRD Agent uses a **multi-agent architecture** orchestrated by LangGraph with
          ↓
 ┌─────────────────────────────────────────┐
 │           LangGraph Workflow            │
-├─────────────┬─────────────┬─────────────┤
-│   Parser    │   Planner   │  Scheduler  │
-│   Agent     │   Agent     │   Agent     │
-└─────────────┴──────┬──────┴─────────────┘
-                     │
-               ┌─────┴─────┐
-               │ Anthropic │
-               │  Claude   │
-               └───────────┘
+├───────┬───────────┬───────────┬─────────┤
+│Parser │Retriever  │  Planner  │Scheduler│
+│Agent  │  Agent    │   Agent   │  Agent  │
+└───────┴──────┬────┴──────┬────┴─────────┘
+                │           │
+          ┌─────┴─────┐     │
+          │   RAG     │     │
+          │(ChromaDB) │     │
+          └───────────┘     │
+                            │
+                      ┌─────┴─────┐
+                      │ Anthropic │
+                      │  Claude   │
+                      └───────────┘
 ```
 
 ### Components
@@ -68,10 +73,11 @@ The BRD Agent uses a **multi-agent architecture** orchestrated by LangGraph with
 1. **Input**: User uploads BRD (PDF/JSON) via Streamlit UI
 2. **Orchestration**: FastAPI receives request, invokes LangGraph
 3. **Parsing**: Parser Agent normalizes BRD format
-4. **Engineering Plan**: Planner Agent generates implementation plan via Claude
-5. **Project Schedule**: Scheduler Agent creates timeline via Claude
-6. **Response**: Artifacts returned to UI and saved to disk
-7. **Display**: UI renders human-readable results + Gantt chart
+4. **Context Retrieval** (if RAG enabled): RetrieverAgent retrieves relevant documentation from ChromaDB
+5. **Engineering Plan**: Planner Agent generates implementation plan via Claude (with context if RAG enabled)
+6. **Project Schedule**: Scheduler Agent creates timeline via Claude
+7. **Response**: Artifacts returned to UI and saved to disk
+8. **Display**: UI renders human-readable results + Gantt chart
 
 ---
 
@@ -143,13 +149,14 @@ The BRD Agent uses a **multi-agent architecture** orchestrated by LangGraph with
 }
 ```
 
-**Response**:
+**Response** (RAG enabled):
 ```json
 {
   "status": "success",
   "message": "BRD processed successfully through entire pipeline",
   "stages_completed": [
     "brd_parsing",
+    "context_retrieval",
     "engineering_plan",
     "project_schedule"
   ],
@@ -174,6 +181,8 @@ The BRD Agent uses a **multi-agent architecture** orchestrated by LangGraph with
   }
 }
 ```
+
+**Note**: The `stages_completed` array includes `"context_retrieval"` only when RAG is enabled (`RAG_ENABLED=true`). When RAG is disabled, the array contains only `["brd_parsing", "engineering_plan", "project_schedule"]`.
 
 **Error Response**:
 ```json
@@ -274,6 +283,64 @@ file: <PDF binary>
   }
 }
 ```
+
+---
+
+## 📚 RAG (Retrieval-Augmented Generation)
+
+### Overview
+
+When RAG is enabled (`RAG_ENABLED=true`), the RetrieverAgent retrieves relevant context from ingested documentation before the PlannerAgent generates the engineering plan. This enables context-aware planning that aligns with existing system architecture.
+
+### Query Expansion
+
+The RetrieverAgent uses **query expansion** to generate multiple search queries from the BRD:
+
+**Dynamic Query Count Formula**:
+```
+query_count = min(RAG_QUERY_COUNT, num_objectives + num_requirements + 3)
+```
+
+Where:
+- `RAG_QUERY_COUNT`: Default is 7 (configurable via environment variable)
+- `num_objectives`: Number of business objectives in the BRD
+- `num_requirements`: Number of functional requirements in the BRD
+- `+3`: Base queries for general context (architecture, tech stack, patterns)
+
+**Example**:
+- BRD with 2 objectives + 3 requirements → `min(7, 2+3+3) = 7` queries
+- BRD with 5 objectives + 8 requirements → `min(7, 5+8+3) = 7` queries (capped at RAG_QUERY_COUNT)
+- BRD with 1 objective + 1 requirement → `min(7, 1+1+3) = 5` queries
+
+**Retrieval Process**:
+1. Extract BRD summary (objectives, requirements)
+2. Generate expanded queries using LLM (up to `query_count` queries)
+3. Generate embeddings for each query (Ollama: nomic-embed-text)
+4. Query ChromaDB vector store (top-K chunks per query)
+5. Merge and deduplicate results
+6. Rank by relevance
+7. Return top `RAG_TOP_K` chunks (default: 15) as formatted context
+
+**Important Notes**:
+- `RAG_TOP_K` applies to the **final merged results**, not per-query results
+- If multiple queries retrieve the same chunk, it's deduplicated before ranking
+- The RetrieverAgent gracefully degrades if RAG is disabled or no collection exists (skips retrieval, continues without context)
+
+### Request Parameter: `repo_url`
+
+You can specify a repository URL in the BRD request to use a specific collection:
+
+```json
+{
+  "project": {
+    "name": "Feature Name",
+    "repo_url": "https://github.com/owner/repo"
+  },
+  "features": [...]
+}
+```
+
+If `repo_url` is not specified, the system uses `DEFAULT_REPO_URL` from configuration.
 
 ---
 
@@ -677,12 +744,14 @@ workflow = StateGraph(AgentState)
 
 # Add nodes (agents)
 workflow.add_node("parser", parser_agent.process)
+workflow.add_node("retriever", retriever_agent.process)
 workflow.add_node("planner", planner_agent.process)
 workflow.add_node("scheduler", scheduler_agent.process)
 
 # Define edges (flow)
 workflow.set_entry_point("parser")
-workflow.add_edge("parser", "planner")
+workflow.add_edge("parser", "retriever")
+workflow.add_edge("retriever", "planner")
 workflow.add_edge("planner", "scheduler")
 workflow.add_edge("scheduler", END)
 
@@ -704,6 +773,10 @@ class AgentState(BaseModel):
     
     # Parser output
     parsed_brd: Optional[Dict[str, Any]] = None
+    
+    # Retriever output (RAG)
+    retrieved_context: Optional[List[Dict[str, Any]]] = None
+    repo_url: Optional[str] = None
     
     # Planner output
     engineering_plan: Optional[Dict[str, Any]] = None

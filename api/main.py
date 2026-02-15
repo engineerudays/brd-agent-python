@@ -17,6 +17,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pypdf import PdfReader
 
+# Import ingestion router
+from api.ingest import router as ingest_router
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,6 +39,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include ingestion router
+app.include_router(ingest_router)
 
 
 # === Request/Response Models ===
@@ -202,7 +208,15 @@ async def root():
         "endpoints": {
             "process_brd": "POST /api/process-brd",
             "health": "GET /health",
-            "docs": "GET /docs"
+            "docs": "GET /docs",
+            "ingestion": {
+                "ingest_document": "POST /api/ingest/document",
+                "ingest_repo_path": "POST /api/ingest/repo-path",
+                "get_status": "GET /api/ingest/status",
+                "list_repos": "GET /api/ingest/repos",
+                "delete_document": "DELETE /api/ingest/document",
+                "delete_repo": "DELETE /api/ingest/repo"
+            }
         }
     }
 

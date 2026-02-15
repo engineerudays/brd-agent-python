@@ -4,6 +4,7 @@ Text chunking strategies for RAG document processing.
 """
 
 import re
+import ast
 from typing import List, Dict, Any, Optional
 
 
@@ -191,6 +192,212 @@ def chunk_recursive(
             break  # Reached end of text
         
         start_pos = max(start_pos + 1, end_pos - overlap)  # Ensure we always advance
+    
+    return chunks
+
+
+def detect_language(file_path: str) -> Optional[str]:
+    """
+    Detect programming language from file extension.
+    
+    Args:
+        file_path: Path to source code file
+        
+    Returns:
+        Language name (e.g., 'python', 'javascript') or None if unknown
+    """
+    if not file_path:
+        return None
+    
+    # Normalize to lowercase
+    file_path_lower = file_path.lower()
+    
+    # Language extension mapping
+    language_map = {
+        '.py': 'python',
+        '.js': 'javascript',
+        '.ts': 'typescript',
+        '.java': 'java',
+        '.go': 'go',
+        '.rs': 'rust',
+        '.cpp': 'cpp',
+        '.c': 'c',
+        '.cs': 'csharp',
+        '.rb': 'ruby',
+        '.php': 'php',
+        '.swift': 'swift',
+        '.kt': 'kotlin',
+        '.scala': 'scala',
+    }
+    
+    # Check for extension match
+    for ext, lang in language_map.items():
+        if file_path_lower.endswith(ext):
+            return lang
+    
+    return None
+
+
+def _extract_docstring(node: ast.AST) -> Optional[str]:
+    """
+    Extract docstring from an AST node (function, class, module).
+    
+    Args:
+        node: AST node (FunctionDef, ClassDef, or Module)
+        
+    Returns:
+        Docstring text or None
+    """
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+        if (node.body and 
+            isinstance(node.body[0], ast.Expr) and 
+            isinstance(node.body[0].value, (ast.Str, ast.Constant))):
+            docstring_node = node.body[0].value
+            if isinstance(docstring_node, ast.Str):
+                return docstring_node.s
+            elif isinstance(docstring_node, ast.Constant) and isinstance(docstring_node.value, str):
+                return docstring_node.value
+    return None
+
+
+def _get_node_source(code: str, node: ast.AST) -> str:
+    """
+    Extract source code for an AST node.
+    
+    Args:
+        code: Full source code
+        node: AST node
+        
+    Returns:
+        Source code string for the node
+    """
+    lines = code.split('\n')
+    # AST line numbers are 1-indexed
+    start_line = node.lineno - 1
+    end_line = node.end_lineno if hasattr(node, 'end_lineno') else start_line + 1
+    
+    # Extract lines (inclusive)
+    node_lines = lines[start_line:end_line]
+    return '\n'.join(node_lines)
+
+
+def chunk_code(
+    code: str,
+    language: Optional[str] = None,
+    source_path: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """
+    Split source code by functions and classes (code-aware chunking).
+    
+    For Python, uses AST parsing to extract functions and classes.
+    Each function/class becomes a separate chunk, preserving hierarchy
+    (nested functions are included in parent function chunk).
+    
+    Args:
+        code: Source code text
+        language: Programming language (e.g., 'python'). If None, detected from source_path
+        source_path: Optional source file path for metadata and language detection
+        
+    Returns:
+        List of chunk dictionaries with:
+        - 'content': Function/class code (signature + docstring + body)
+        - 'source': Source file path (if provided)
+        - 'line_start': Starting line number (1-indexed)
+        - 'line_end': Ending line number (1-indexed)
+        - 'chunk_type': 'code_function' or 'code_class'
+        - 'language': Programming language
+        - 'name': Function/class name
+        - 'has_docstring': Boolean indicating if docstring exists
+        - 'parent': Parent function/class name (if nested)
+    """
+    if not code or not code.strip():
+        return []
+    
+    # Detect language if not provided
+    if language is None and source_path:
+        language = detect_language(source_path)
+    
+    # Currently only Python is supported
+    if language != 'python':
+        # For non-Python languages, fall back to recursive chunking
+        # TODO: Add support for other languages using regex/tree-sitter
+        return chunk_recursive(code, chunk_size=1000, overlap=200, source_path=source_path)
+    
+    try:
+        # Parse Python code into AST
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        # If parsing fails, fall back to recursive chunking
+        return chunk_recursive(code, chunk_size=1000, overlap=200, source_path=source_path)
+    
+    chunks = []
+    lines = code.split('\n')
+    
+    def process_node(node: ast.AST, parent_name: Optional[str] = None):
+        """
+        Recursively process AST nodes to extract functions and classes.
+        
+        Args:
+            node: AST node to process
+            parent_name: Name of parent function/class (for nested functions)
+        """
+        # Process classes
+        if isinstance(node, ast.ClassDef):
+            class_source = _get_node_source(code, node)
+            docstring = _extract_docstring(node)
+            
+            # Create chunk for class (methods are included in the content)
+            chunks.append({
+                'content': class_source,  # This already includes all methods in the body
+                'source': source_path,
+                'line_start': node.lineno,
+                'line_end': node.end_lineno if hasattr(node, 'end_lineno') else node.lineno,
+                'chunk_type': 'code_class',
+                'language': 'python',
+                'name': node.name,
+                'has_docstring': docstring is not None,
+                'parent': parent_name,
+            })
+            
+            # Note: Methods are NOT processed separately - they're included in class content
+            # This preserves the hierarchy as requested
+        
+        # Process functions (both sync and async)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            func_source = _get_node_source(code, node)
+            docstring = _extract_docstring(node)
+            
+            # Create chunk for function (nested functions are included in the content)
+            chunks.append({
+                'content': func_source,  # This already includes nested functions in the body
+                'source': source_path,
+                'line_start': node.lineno,
+                'line_end': node.end_lineno if hasattr(node, 'end_lineno') else node.lineno,
+                'chunk_type': 'code_function',
+                'language': 'python',
+                'name': node.name,
+                'has_docstring': docstring is not None,
+                'parent': parent_name,
+            })
+            
+            # Note: Nested functions are NOT processed separately - they're included in parent function content
+            # This preserves the hierarchy as requested
+    
+    # Track processed nodes to avoid duplicates
+    processed_nodes = set()
+    
+    def process_node_safe(node: ast.AST, parent_name: Optional[str] = None):
+        """Wrapper to avoid processing same node twice."""
+        node_id = id(node)
+        if node_id in processed_nodes:
+            return
+        processed_nodes.add(node_id)
+        process_node(node, parent_name)
+    
+    # Process all top-level functions and classes
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            process_node_safe(node)
     
     return chunks
 

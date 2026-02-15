@@ -179,6 +179,6 @@ class ProjectSchedule(BaseModel):
         default=None,
         description="Generation metadata (timestamp, model, etc.)"
     )
-    
+
     class Config:
         extra = "allow"

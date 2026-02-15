@@ -11,6 +11,18 @@ Complete guide to set up and run the BRD to Engineering Artifacts pipeline.
 - **Python 3.11+** - Core runtime
 - **pip** - Package manager
 - **Git** - Version control (optional)
+- **Ollama** - For RAG embeddings (required for RAG features)
+  ```bash
+  # macOS
+  brew install ollama
+  brew services start ollama
+  
+  # Pull embedding model
+  ollama pull nomic-embed-text
+  
+  # Verify Ollama is running
+  curl http://localhost:11434/api/tags
+  ```
 
 ### Optional Tools
 - **curl** - API testing (usually pre-installed)
@@ -37,17 +49,39 @@ Complete guide to set up and run the BRD to Engineering Artifacts pipeline.
 ## 🏗️ Architecture Quick Reference
 
 ```
-┌─────────┐     ┌──────────┐     ┌─────────────┐     ┌──────────┐
-│  JSON   │────▶│  Parser  │────▶│ Engineering │────▶│ Project  │
-│  BRD    │     │  Agent   │     │    Plan     │     │ Schedule │
-└─────────┘     └──────────┘     └─────────────┘     └──────────┘
-                     │                   │                  │
-              Input Normalizer      LLM Agent          LLM Agent
-                                        
-                     └───────────────────┴──────────────────┘
-                                LangGraph Workflow
-                              (FastAPI Orchestrator)
-                                  Port 8000
+┌─────────────────────────────────────────────────────────────┐
+│                    Streamlit UI (Port 8501)                 │
+└────────────────────────────┬────────────────────────────────┘
+                             │ HTTP POST
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│              FastAPI Orchestrator (Port 8000)               │
+│         /api/process-brd  |  /api/ingest/*                  │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    LangGraph Workflow                       │
+├─────────────────────────────────────────────────────────────┤
+│  ParserAgent → RetrieverAgent → PlannerAgent → SchedulerAgent │
+│       ↓              ↓              ↓              ↓         │
+│  Normalized    Retrieved    Engineering    Project          │
+│     BRD        Context        Plan         Schedule         │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+                    ┌─────────────┐
+                    │  Anthropic  │
+                    │   Claude    │
+                    └─────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    RAG Infrastructure                       │
+├─────────────────────────────────────────────────────────────┤
+│  ChromaDB ← Embeddings (Ollama) ← Chunking ← GitHub API     │
+│  Vector Store    (nomic-embed)    Strategies   Client       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -99,6 +133,11 @@ This installs:
 - **pydantic** - Data validation
 - **pypdf** - PDF parsing
 - **python-multipart** - File uploads
+- **chromadb** - Vector database for RAG
+- **httpx** - HTTP client for GitHub API
+- **ollama** - Ollama client for embeddings
+- **typer** - CLI framework
+- **rich** - Terminal formatting
 
 ### Step 4: Configure Environment
 
@@ -116,9 +155,30 @@ nano .env  # or use your preferred editor
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 ```
 
+**Optional RAG Configuration:**
+```bash
+# RAG Feature Flag
+RAG_ENABLED=false  # Set to true to enable RAG
+
+# Default Repository (used if repo_url not specified in BRD)
+DEFAULT_REPO_URL=https://github.com/paperless-ngx/paperless-ngx
+
+# Retrieval Settings
+RAG_TOP_K=15                    # Number of chunks to retrieve per query
+RAG_QUERY_COUNT=7               # Number of expanded queries (query expansion)
+
+# ChromaDB Settings
+CHROMADB_PATH=./.chromadb       # Path for vector store persistence
+
+# Ollama Settings
+OLLAMA_EMBEDDING_URL=http://localhost:11434
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+```
+
 **⚠️ Important:** 
 - Replace `sk-ant-your-key-here` with your actual Anthropic API key
 - Never commit `.env` to git (it's in `.gitignore`)
+- For RAG features, ensure Ollama is running before starting the backend
 
 ### Step 5: Verify Installation
 
@@ -128,6 +188,38 @@ python -c "from src.brd_agent.agents import PlannerAgent; print('✓ Agents OK')
 python -c "from src.brd_agent.graph.workflow import create_workflow; print('✓ Workflow OK')"
 python -c "import anthropic; print('✓ Anthropic SDK OK')"
 ```
+
+### Step 6: Setup RAG (Optional but Recommended)
+
+RAG (Retrieval-Augmented Generation) enables context-aware planning by retrieving relevant documentation from your codebase.
+
+**Prerequisites:**
+1. Ollama must be installed and running (see Prerequisites above)
+2. Embedding model must be pulled: `ollama pull nomic-embed-text`
+
+**Quick Setup:**
+```bash
+# 1. Verify Ollama is running
+curl http://localhost:11434/api/tags
+
+# 2. Enable RAG in .env
+echo "RAG_ENABLED=true" >> .env
+
+# 3. Ingest documentation from a repository
+python -m cli.ingest https://github.com/your-org/your-repo
+
+# 4. Restart backend to load RAG configuration
+# (Press Ctrl+C in backend terminal, then restart)
+uvicorn api.main:app --reload --port 8000
+```
+
+**Collection Naming Convention**:
+- Each repository gets its own ChromaDB collection
+- Collection names are derived from repository URLs (normalized: `owner_repo`)
+- Example: `https://github.com/paperless-ngx/paperless-ngx` → collection name: `paperless-ngx_paperless-ngx`
+- Collections are stored persistently in `.chromadb/` directory (configurable via `CHROMADB_PATH`)
+
+**For detailed RAG usage, see [USER_GUIDE.md](USER_GUIDE.md#rag-setup-and-usage)**
 
 ---
 
@@ -226,6 +318,25 @@ ls -lh sample_inputs/outputs/engineering_plans/
 ls -lh sample_inputs/outputs/project_schedules/
 ```
 
+### RAG Test (Optional)
+
+**Prerequisites**: RAG enabled, documentation ingested
+
+```bash
+# 1. Ingest test repository
+python -m cli.ingest https://github.com/paperless-ngx/paperless-ngx
+
+# 2. Process BRD with RAG (via API)
+curl -X POST http://localhost:8000/api/process-brd \
+  -H "Content-Type: application/json" \
+  -d @sample_inputs/brds/step-16-e2e-test-paperless_ngx_feature.json
+
+# 3. Check ingestion status
+curl "http://localhost:8000/api/ingest/status?repo_url=https://github.com/paperless-ngx/paperless-ngx"
+```
+
+**See [scripts/test_step16_end_to_end.py](scripts/test_step16_end_to_end.py) for complete end-to-end test**
+
 ---
 
 ## 🔧 Configuration Options
@@ -237,6 +348,13 @@ ls -lh sample_inputs/outputs/project_schedules/
 | `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key | - |
 | `DEFAULT_MODEL` | No | Claude model to use | `claude-sonnet-4-20250514` |
 | `OUTPUT_DIR` | No | Directory for artifacts | `sample_inputs/outputs` |
+| `RAG_ENABLED` | No | Enable/disable RAG feature | `false` |
+| `DEFAULT_REPO_URL` | No | Default repository for RAG | `https://github.com/paperless-ngx/paperless-ngx` |
+| `RAG_TOP_K` | No | Chunks to retrieve per query | `15` |
+| `RAG_QUERY_COUNT` | No | Number of expanded queries | `7` |
+| `CHROMADB_PATH` | No | Vector store persistence path | `./.chromadb` |
+| `OLLAMA_EMBEDDING_URL` | No | Ollama API URL | `http://localhost:11434` |
+| `OLLAMA_EMBEDDING_MODEL` | No | Embedding model name | `nomic-embed-text` |
 
 ### Frontend Configuration
 
@@ -263,20 +381,26 @@ brd_agent_python/
 ├── api/                      # FastAPI services
 │   ├── __init__.py
 │   ├── main.py              # Orchestrator API
-│   └── pdf_parser.py        # PDF parsing endpoints
+│   ├── pdf_parser.py        # PDF parsing endpoints
+│   └── ingest.py           # Ingestion API endpoints (NEW)
 ├── frontend/                 # Streamlit UI
 │   ├── __init__.py
 │   ├── app.py               # Main application
 │   ├── utils.py             # Helper functions
 │   ├── config.py            # Configuration
 │   └── requirements.txt     # Frontend deps (subset)
+├── cli/                     # CLI tools (NEW)
+│   ├── __init__.py
+│   ├── __main__.py          # CLI entry point
+│   └── ingest.py           # Bulk ingestion CLI (NEW)
 ├── src/brd_agent/           # Core library
 │   ├── __init__.py
 │   ├── agents/              # Agent implementations
 │   │   ├── __init__.py
 │   │   ├── base.py          # Abstract base agent
 │   │   ├── parser.py        # Input normalizer
-│   │   ├── planner.py       # Engineering plan agent
+│   │   ├── retriever.py     # RAG context retrieval (NEW)
+│   │   ├── planner.py       # Engineering plan agent (RAG-enhanced)
 │   │   └── scheduler.py     # Project schedule agent
 │   ├── graph/               # LangGraph workflow
 │   │   ├── __init__.py
@@ -290,13 +414,21 @@ brd_agent_python/
 │   ├── prompts/             # AI prompts (future)
 │   ├── services/            # External services
 │   │   ├── __init__.py
-│   │   └── llm.py           # LLM abstraction
+│   │   ├── llm.py           # LLM abstraction
+│   │   ├── vector_store.py  # ChromaDB vector store (NEW)
+│   │   ├── embeddings.py    # Ollama embedding service (NEW)
+│   │   ├── chunking.py      # Document chunking strategies (NEW)
+│   │   ├── github_client.py # GitHub API client (NEW)
+│   │   ├── document_loaders/ # Document loaders (NEW)
+│   │   │   └── markdown_loader.py
+│   │   └── repository_analyzer.py # Repository analysis (NEW)
 │   └── config.py            # App configuration
 ├── sample_inputs/           # Test data
 │   ├── brds/                # Sample BRD files
 │   └── outputs/             # Generated artifacts
-│       ├── engineering_plans/
-│       └── project_schedules/
+├── scripts/                 # Test scripts (NEW)
+│   ├── test_step*.py        # Step-by-step test scripts
+│   └── demo_step*.py        # Demo scripts
 ├── tests/                   # Test suite
 │   ├── __init__.py
 │   ├── integration/
@@ -352,6 +484,21 @@ curl http://localhost:8000/health
 
 # Liveness check
 curl http://localhost:8000/
+```
+
+### CLI Tools
+
+```bash
+# Bulk ingestion CLI
+python -m cli.ingest https://github.com/owner/repo
+python -m cli.ingest https://github.com/owner/repo --path docs/
+python -m cli.ingest  # Uses default repo from config
+
+# Check ingestion status via API
+curl "http://localhost:8000/api/ingest/status?repo_url=https://github.com/owner/repo"
+
+# List ingested repositories
+curl http://localhost:8000/api/ingest/repos
 ```
 
 ---
@@ -416,6 +563,49 @@ uvicorn api.main:app --port 8001
 1. Check backend logs for specific errors
 2. Try with a simpler BRD
 3. Open an issue if persistent
+
+### "Ollama connection error" or "RAG not working"
+
+**Causes**:
+- Ollama not running
+- Embedding model not pulled
+- RAG_ENABLED=false in .env
+
+**Solutions**:
+```bash
+# 1. Check Ollama is running
+curl http://localhost:11434/api/tags
+
+# 2. Start Ollama if not running
+brew services start ollama  # macOS
+
+# 3. Pull embedding model
+ollama pull nomic-embed-text
+
+# 4. Verify RAG is enabled in .env
+grep RAG_ENABLED .env  # Should show RAG_ENABLED=true
+
+# 5. Restart backend after changing .env
+```
+
+### "No context retrieved" or "Collection not found"
+
+**Causes**:
+- Documentation not ingested
+- Wrong repository URL
+- ChromaDB collection doesn't exist
+
+**Solutions**:
+```bash
+# 1. Check ingestion status
+curl "http://localhost:8000/api/ingest/status?repo_url=https://github.com/owner/repo"
+
+# 2. Ingest documentation if needed
+python -m cli.ingest https://github.com/owner/repo
+
+# 3. Verify collection exists
+ls -la .chromadb/
+```
 
 ---
 

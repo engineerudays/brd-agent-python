@@ -8,6 +8,7 @@ from .vector_store import VectorStore
 from .embeddings import EmbeddingService
 from .chunking import chunk_markdown, chunk_recursive
 from .github_client import GitHubClient
+from .document_loaders import load_markdown, Document
 
 __all__ = [
     "LLMService",
@@ -19,4 +20,6 @@ __all__ = [
     "chunk_markdown",
     "chunk_recursive",
     "GitHubClient",
+    "load_markdown",
+    "Document",
 ]
